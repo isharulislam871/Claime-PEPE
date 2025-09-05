@@ -7,7 +7,6 @@
     "dev:next": "ts-node server.ts",
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
- "vercel-build": "npm install --legacy-peer-deps && next build",
     "start": "next start",
     "lint": "eslint",
     "seed:admin": "tsx src/scripts/seedAdmin.ts"
