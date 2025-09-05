@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import mongoose from 'mongoose';
+ 
 import { setupWebhook, removeWebhook, getWebhookInfo , getBotInfo } from '@/lib/telegram/webhook';
+import { BotConfig } from '@/models/BotConfig';
 
-// Bot configuration schema
-const botConfigSchema = new mongoose.Schema({
-  botToken: { type: String, required: true },
-  botUsername: String,
-  webhookUrl: String,
-  autoStart: { type: Boolean, default: true },
-  status: { type: String, enum: ['running', 'stopped'], default: 'stopped' },
-  lastUpdated: { type: Date, default: Date.now },
-  processId: String,
-  webhookActive: { type: Boolean, default: false }
-});
-
-const BotConfig = mongoose.models.BotConfig || mongoose.model('BotConfig', botConfigSchema);
-
+ 
+ 
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -48,7 +37,7 @@ export async function POST(request: NextRequest) {
       }
       
       const success = await setupWebhook(botConfig.botToken, botConfig.webhookUrl);
-      
+    
       if (success) {
         if(!botConfig.botUsername){
           const info = await getBotInfo(botConfig.botToken);

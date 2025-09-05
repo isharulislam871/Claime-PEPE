@@ -83,6 +83,9 @@ export default function RootLayout({
             src="https://telegram.org/js/telegram-web-app.js"
             strategy="beforeInteractive"
           />
+
+<Script src='//libtl.com/sdk.js' data-zone='9827587' data-sdk='show_9827587'/> 
+
           
       </body>
     </html>

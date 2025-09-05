@@ -23,7 +23,9 @@ import {
   DollarOutlined,
   SettingOutlined,
   AppstoreOutlined,
-  SecurityScanOutlined
+  SecurityScanOutlined,
+  GlobalOutlined,
+  ApiOutlined
 } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 
@@ -38,6 +40,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
   const [form] = Form.useForm();
   const [loadingState, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [monetagEnabled, setMonetagEnabled] = useState(false);
 
   // Fetch initial values from API
   useEffect(() => {
@@ -49,6 +52,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
           const result = await response.json();
           if (result.success) {
             form.setFieldsValue(result.data);
+            setMonetagEnabled(result.data?.monetagEnabled || false);
           }
         }
       } catch (error) {
@@ -64,6 +68,21 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
 
   const handleResetSettings = () => {
     form.resetFields();
+  };
+
+  const handleMonetagToggle = (checked: boolean) => {
+    setMonetagEnabled(checked);
+    if (!checked) {
+      // Clear Monetag-related fields when disabled
+      form.setFieldsValue({
+        monetagApiKey: undefined,
+        monetagPublisherId: undefined,
+        monetagAdFormat: undefined,
+        monetagRewardAmount: undefined,
+        monetagTestMode: false,
+        monetagAutoShow: false
+      });
+    }
   };
 
   const handleSaveAdsSettings = async (values: any) => {
@@ -231,6 +250,60 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
                   className="rounded-lg"
                 />
               </Form.Item>
+            </Space>
+          </Card>
+
+          {/* Monetag Integration */}
+          <Card 
+            title={
+              <Space>
+                <GlobalOutlined className="text-blue-600" />
+                <span>Monetag Integration</span>
+              </Space>
+            }
+            className="shadow-sm border-gray-200"
+          >
+            <Space direction="vertical" size="middle" className="w-full">
+              <Row gutter={[24, 16]}>
+                <Col xs={24}>
+                  <Form.Item
+                    name="monetagEnabled"
+                    label="Enable Monetag Ads"
+                    tooltip="Turn on/off Monetag advertisement integration"
+                    valuePropName="checked"
+                  >
+                    <Switch 
+                      size="default"
+                      checkedChildren="ON"
+                      unCheckedChildren="OFF"
+                      onChange={(checked) => setMonetagEnabled(checked)}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {monetagEnabled && (
+                <>
+                   
+                  <Row gutter={[24, 16]}>
+                     
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        name="monetagZoneId"
+                        label="Zone ID"
+                        tooltip="Your Monetag zone ID for advertisements"
+                        rules={monetagEnabled ? [{ required: true, message: 'Zone ID is required when Monetag is enabled!' }] : []}
+                      >
+                        <Input 
+                          placeholder="Enter Zone ID"
+                          size="large"
+                          prefix={<DollarOutlined className="text-gray-400" />}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </>
+              )}
             </Space>
           </Card>
 

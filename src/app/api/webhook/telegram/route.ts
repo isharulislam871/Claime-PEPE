@@ -2,22 +2,98 @@ import { NextRequest, NextResponse } from 'next/server';
 import TelegramBot from 'node-telegram-bot-api';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { generateUniqueReferralCode } from '@/lib/utils/referralCode';
+import { BotConfig } from '@/models/BotConfig';
+
+
+// GET handler to check bot running status
+export async function GET(request: NextRequest) {
+  try {
+    await dbConnect();
+    
+    // Get bot configuration from database
+    const botConfig = await BotConfig.findOne();
+    
+    if (!botConfig || !botConfig.botToken) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Bot configuration not found in database',
+          status: 'not_configured'
+        },
+        { status: 500 }
+      );
+    }
+
+    // Create bot instance to test connection
+    const bot = new TelegramBot(botConfig.botToken, { polling: false });
+    
+    try {
+      // Test bot connection by getting bot info
+      const botInfo = await bot.getMe();
+      
+      // Update bot config with latest info
+      botConfig.botUsername = botInfo.username;
+      botConfig.lastUpdated = new Date();
+      await botConfig.save();
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          botId: botInfo.id,
+          username: botInfo.username,
+          firstName: botInfo.first_name,
+          status: botConfig.status,
+          webhookActive: botConfig.webhookActive,
+          webhookUrl: botConfig.webhookUrl,
+          autoStart: botConfig.autoStart,
+          lastUpdated: botConfig.lastUpdated,
+          isRunning: botConfig.status === 'running' && botConfig.webhookActive
+        }
+      });
+      
+    } catch (botError) {
+      console.error('Bot connection error:', botError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Bot connection failed',
+          status: 'connection_error',
+          details: botError instanceof Error ? botError.message : 'Unknown error'
+        },
+        { status: 503 }
+      );
+    }
+    
+  } catch (error) {
+    console.error('Status check error:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Status check failed',
+        status: 'error'
+      },
+      { status: 500 }
+    );
+  }
+}
 
 // Webhook handler for Telegram updates
 export async function POST(request: NextRequest) {
   try {
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    await dbConnect();
     
-    if (!botToken) {
+    // Get bot configuration from database
+    const botConfig = await BotConfig.findOne();
+    
+    if (!botConfig || !botConfig.botToken) {
       return NextResponse.json(
-        { error: 'Bot token not configured' },
+        { error: 'Bot configuration not found in database' },
         { status: 500 }
       );
     }
 
     // Create bot instance without polling (webhook mode)
-    const bot = new TelegramBot(botToken, { polling: false });
+    const bot = new TelegramBot(botConfig.botToken, { polling: false });
     
     // Parse the incoming update
     const update = await request.json();

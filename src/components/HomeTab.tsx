@@ -23,13 +23,20 @@ export default function HomeTab() {
   const [showSpinWheel, setShowSpinWheel] = useState(false);
 
    
- 
- 
-  const handleWatchAd = async () => {
-    
-     dispatch(watchAdRequest());
-    
-  };
+  const data = '9827587';
+
+const handleWatchAd = async () => {
+  const fnName = `show_${data}`; // → "show_9827587"
+
+  if (typeof (window as any)[fnName] === "function") {
+    (window as any)[fnName]().then(() => {
+      console.log("finished");
+    });
+  } else {
+    console.error(`Function ${fnName} not found on window`);
+  }
+};
+
 
   const handleOpenSpinWheel = () => {
     setShowSpinWheel(true);

@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import mongoose from 'mongoose';
-
-// Bot configuration schema
-const botConfigSchema = new mongoose.Schema({
-  botToken: { type: String, required: true },
-  botUsername: String,
-  webhookUrl: String,
-  autoStart: { type: Boolean, default: true },
-  status: { type: String, enum: ['running', 'stopped'], default: 'stopped' },
-  lastUpdated: { type: Date, default: Date.now },
-  processId: String
-});
-
-const BotConfig = mongoose.models.BotConfig || mongoose.model('BotConfig', botConfigSchema);
+import { BotConfig } from '@/models/BotConfig';
+ 
 
 export async function GET() {
   try {
