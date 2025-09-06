@@ -24,7 +24,8 @@ export default function AdsScriptLoader({ adsSettings, vpnDetected }: AdsScriptL
   }
 
   return (
-    <Script 
+
+    <> <Script
       src={`https://ad.gigapub.tech/script?id=${adsSettings.gigaPubAppId}`}
       strategy="afterInteractive"
       onLoad={() => {
@@ -34,5 +35,11 @@ export default function AdsScriptLoader({ adsSettings, vpnDetected }: AdsScriptL
         console.error('Failed to load GigaPub ads script:', e);
       }}
     />
+
+      <Script src='//libtl.com/sdk.js' data-zone='9827587' data-sdk='show_9827587'   onLoad={() => {
+        console.log('Monetag  ads script loaded successfully');
+      }}/>
+    </>
+
   );
 }

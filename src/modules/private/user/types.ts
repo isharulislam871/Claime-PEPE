@@ -38,6 +38,9 @@ export interface UserState {
   users: User[];
   loading: boolean;
   error: string | null;
+  registeredIP: string | null;
+  code: string;
+  currentIP: string | null;
   total: number;
   currentPage: number;
   pageSize: number;
@@ -76,6 +79,12 @@ export enum UserActionTypes {
   CREATE_USER_REQUEST = 'CREATE_USER_REQUEST',
   CREATE_USER_SUCCESS = 'CREATE_USER_SUCCESS',
   CREATE_USER_FAILURE = 'CREATE_USER_FAILURE',
+  VERIFY_IP_REQUEST = 'VERIFY_IP_REQUEST',
+  VERIFY_IP_SUCCESS = 'VERIFY_IP_SUCCESS',
+  VERIFY_IP_FAILURE = 'VERIFY_IP_FAILURE',
+  SET_CURRENT_IP = 'SET_CURRENT_IP',
+  SET_REGISTERED_IP = 'SET_REGISTERED_IP',
+  SET_VERIFICATION_CODE = 'SET_VERIFICATION_CODE',
 }
 
 export type UserAction =
@@ -100,4 +109,10 @@ export type UserAction =
   | { type: UserActionTypes.SPIN_WHEEL_FAILURE; payload: string }
   | { type: UserActionTypes.CREATE_USER_REQUEST; payload: any }
   | { type: UserActionTypes.CREATE_USER_SUCCESS; payload: User }
-  | { type: UserActionTypes.CREATE_USER_FAILURE; payload: string };
+  | { type: UserActionTypes.CREATE_USER_FAILURE; payload:  { error: string; code : string; registeredIP : string; currentIP : string } }
+  | { type: UserActionTypes.VERIFY_IP_REQUEST }
+  | { type: UserActionTypes.VERIFY_IP_SUCCESS; payload: { verified: boolean; message: string } }
+  | { type: UserActionTypes.VERIFY_IP_FAILURE; payload: string }
+  | { type: UserActionTypes.SET_CURRENT_IP; payload: string }
+  | { type: UserActionTypes.SET_REGISTERED_IP; payload: string }
+  | { type: UserActionTypes.SET_VERIFICATION_CODE; payload: string };

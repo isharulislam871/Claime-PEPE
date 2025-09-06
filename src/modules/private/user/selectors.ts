@@ -41,3 +41,21 @@ export const selectEarningSystemsStatus = createSelector(
   })
 );
 
+// IP Tracking Selectors
+export const selectCurrentIP = (state: RootState) => state.private.user.currentIP;
+
+export const selectRegisteredIP = (state: RootState) => state.private.user.registeredIP;
+
+export const selectVerificationCode = (state: RootState) => state.private.user.code;
+
+export const selectIPVerificationStatus = createSelector(
+  [selectCurrentIP, selectRegisteredIP, selectVerificationCode],
+  (currentIP, registeredIP, code) => ({
+    currentIP,
+    registeredIP,
+    code,
+    isIPMismatch: currentIP && registeredIP && currentIP !== registeredIP,
+    needsVerification: Boolean(code)
+  })
+);
+

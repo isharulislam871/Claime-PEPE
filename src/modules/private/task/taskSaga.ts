@@ -28,7 +28,7 @@ function* fetchTasksSaga(): Generator<Effect, void, unknown> {
 
     const {response} : TypeApiPromise = (yield call(API_CALL, { url : '/tasks' , params : { hash}})) as any;
     yield put(fetchTasksSuccess(response?.result?.result?.tasks || [], response?.result?.result?.taskStatus || {}));
-    toast.success('Tasks loaded successfully');
+ 
   } catch (error: unknown) {
     if (error instanceof Error) {
       toast.error(error.message);
@@ -99,11 +99,11 @@ function* fetchAdsSaga(): Generator<Effect, void, unknown> {
     const {response , status } : any = (yield call(API_CALL,{ url : '/ads' , params : { hash }})) as any;
     
     if (status === 200) {
-      console.log(response.data.userStats)
+ 
      yield put(fetchAdsSuccess([] , response.data.userStats));
-      toast.success('Ads data loaded successfully');
+   
     } else {
-     // throw new Error(response.data.error || 'Failed to load ads');
+      throw new Error(response.data.error || 'Failed to load ads');
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -130,7 +130,7 @@ function* watchAdSaga(): Generator<Effect, void, unknown> {
       method: 'POST', 
       body: { hash } 
     })) as any;
-
+ 
     if (status === 200) {
       yield put(watchAdSuccess(response));
       // Refresh ads data after watching

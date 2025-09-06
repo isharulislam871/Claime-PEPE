@@ -124,7 +124,7 @@ const UserSchema: Schema = new Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'ban', 'suspend'],
+    enum: ['active', 'ban', 'suspend', 'IP_MISMATCH'],
     default: 'active'
   },
   banReason: {

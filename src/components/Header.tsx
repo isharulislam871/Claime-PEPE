@@ -1,63 +1,69 @@
 'use client'; 
-import {  selectCurrentUser } from '@/modules';
+import { selectCurrentUser } from '@/modules';
 import { useSelector } from 'react-redux';
+import { Card, Avatar, Typography, Space, Row, Col, Statistic } from 'antd';
+import { UserOutlined, DollarOutlined } from '@ant-design/icons';
 
-interface HeaderProps {
-  title: string;
-  subtitle?: string;
-  showBalance?: boolean;
-  showUserInfo?: boolean;
-}
+const { Title, Text } = Typography;
 
-export default function Header({ title, subtitle, showBalance = false, showUserInfo = false }: HeaderProps) {
- 
-  const user = useSelector(selectCurrentUser)
- 
+export default function Header() {
+  const user = useSelector(selectCurrentUser);
+  
+  // Conversion rate: 10,000 Points = $0.25 USDT
+  const convertToUSDT = (points: number) => {
+    return (points / 10000 * 0.25).toFixed(4);
+  };
+
+  if (!user) return null;
 
   return (
-    <div className="mb-6">
-      {/* User Info Section */}
-      {showUserInfo && user && (
-        <div className="flex items-center justify-between mb-4 bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-3">
-            <img 
-              src={user.profilePicUrl || "https://i.pravatar.cc/100"} 
-              alt="User Profile" 
-              className="w-12 h-12 rounded-full border-2 border-gray-200"
-            />
-            <div>
-              <p className="text-sm text-gray-600">Welcome,</p>
-              <h2 className="text-lg font-semibold text-gray-900">{user.username}</h2>
-            </div>
-          </div>
-          {showBalance && (
-            <div className="text-right">
-              <p className="text-sm text-gray-600">Balance</p>
-              <p className="text-xl font-bold text-yellow-600">{user.balance || 0} PEPE</p>
-            </div>
-          )}
-        </div>
-      )}
+    <Space direction="vertical" size="middle" style={{ width: '100%', marginBottom: 24 }}>
+      {/* User Info Card */}
+      <Card 
+        bordered={false}
+        style={{ 
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white'
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
+        <Row align="middle" justify="space-between">
+          <Col>
+            <Space align="center">
+              <Avatar 
+                size={48}
+                src={user.profilePicUrl || "https://i.pravatar.cc/100"}
+                icon={<UserOutlined />}
+                style={{ border: '2px solid rgba(255,255,255,0.3)' }}
+              />
+              <Space direction="vertical" size={0}>
+                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                  Welcome,
+                </Text>
+                <Title level={5} style={{ color: 'white', margin: 0 }}>
+                  {user.username}
+                </Title>
+              </Space>
+            </Space>
+          </Col>
+          <Col>
+            <Space direction="vertical" size={0} align="end">
+              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                Balance
+              </Text>
+              <Title level={4} style={{ color: '#FFD700', margin: 0 }}>
+                {user.balance || 0} Points
+              </Title>
+              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10 }}>
+                ≈ ${convertToUSDT(user.balance || 0)} USDT
+              </Text>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
-      {/* Title Section */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>
-        {subtitle && (
-          <p className="text-gray-600">{subtitle}</p>
-        )}
-      </div>
-
-      {/* Balance Only Section */}
-      {showBalance && !showUserInfo && user && (
-        <div className="mt-4 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-xl p-4 text-white">
-          <div className="text-center">
-            <p className="text-sm opacity-90">Available Balance</p>
-            <p className="text-2xl font-bold">{user.balance || 0} <span className="text-lg">PEPE</span></p>
-          </div>
-        </div>
-      )}
-
-     
-    </div>
+      
+    </Space>
   );
 }

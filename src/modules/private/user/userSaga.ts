@@ -112,35 +112,14 @@ function* updateUserStatusSaga(action: ReturnType<typeof updateUserStatus>): Gen
     }
   }
 }
-
-function* watchAdSaga(): Generator<Effect, void, unknown> {
-  try {
-    const  CurrentUser =  getCurrentUser()
-    const hash = encrypt(CurrentUser.telegramId);
-    const { response , status } : TypeApiPromise = (yield call(API_CALL, { url : '/ads' , method : 'POST', body : { hash }})) as any;
-    if(status === 200){ 
-      toast.success('Ad watched successfully');
-      return;
-    }
-    toast.error(response?.error);
-    yield put(watchAdFailure(response?.error));
  
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      toast.error(error.message);
-      yield put(watchAdFailure(error.message));
-    } else {
-      yield put(watchAdFailure('Failed to watch ad'));
-    }
-  }
-}
 
 function* createUserSaga(action: ReturnType<typeof createUserRequest>): Generator {
   try {
     const userData = action.payload;
     const hash = encrypt(userData.telegramId);
 
-    const { response, status }: TypeApiPromise = (yield call(API_CALL, {
+    const { response, status }: any = (yield call(API_CALL, {
       url: "/users",
       method: "POST",
       body: JSON.stringify({ hash, ...userData }),
@@ -149,10 +128,8 @@ function* createUserSaga(action: ReturnType<typeof createUserRequest>): Generato
     if (status === 200 || status === 201) {
       yield put(createUserSuccess(response?.result?.users));
       return;
-    }
-
-    toast.error(response?.error || "Failed to create user");
-    yield put(createUserFailure(response?.error));
+    } 
+    yield put(createUserFailure({ error : response?.error, code : response?.code, registeredIP : response?.registeredIP, currentIP : response?.currentIP}));
 
   } catch (error: any) {
     toast.error(error.message || "Unexpected error");
@@ -165,6 +142,5 @@ export function* userSaga(): Generator<Effect, void, unknown> {
   yield takeLatest(UserActionTypes.FETCH_USERS_REQUEST, fetchUsersSaga);
   yield takeLatest(UserActionTypes.FETCH_USER_STATS_REQUEST, fetchUserStatsSaga);
   yield takeLatest(UserActionTypes.UPDATE_USER_STATUS_REQUEST, updateUserStatusSaga);
-  yield takeLatest(UserActionTypes.WATCH_AD_REQUEST, watchAdSaga);
   yield takeLatest(UserActionTypes.CREATE_USER_REQUEST, createUserSaga);
 }

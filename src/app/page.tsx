@@ -66,11 +66,11 @@ export default function Home() {
             vpnDetected={vpnDetected}
           />
 
-          {/* Handle VPN detection */}
-          <VpnManager 
+           
+          {/* <VpnManager 
             vpnDetected={vpnDetected}
             setVpnDetected={setVpnDetected}
-          />
+          /> */}
 
           {/* Main tab interface */}
           <TabManager />

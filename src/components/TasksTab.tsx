@@ -17,9 +17,30 @@ import Header from './Header';
  
 import { useDispatch, useSelector } from 'react-redux';
   
+import { 
+  Card, 
+  Button, 
+  Progress, 
+  Space, 
+  Typography, 
+  Tag, 
+  Row, 
+  Col, 
+  Avatar,
+  Statistic,
+  Badge,
+  Divider
+} from 'antd';
+import { 
+  PlayCircleOutlined, 
+  CheckCircleOutlined, 
+  ClockCircleOutlined,
+  TrophyOutlined,
+  GiftOutlined,
+  InfoCircleOutlined
+} from '@ant-design/icons';
 
-import { Button } from 'antd';
-import { ProgressBar } from 'antd-mobile';
+const { Title, Text, Paragraph } = Typography;
  
 
 export default function TasksTab() {
@@ -33,328 +54,368 @@ export default function TasksTab() {
   const adStats = useSelector(selectAdStats);
  
 
-  useEffect(() => {
-    dispatch(fetchTasksRequest());
-    dispatch(fetchAdsRequest());
-  }, [dispatch]);
-
-  const handleRefresh = async () => {
-    dispatch(fetchTasksRequest());
-    dispatch(fetchAdsRequest());
-  };
+useEffect(() => {
+  dispatch(fetchTasksRequest());
+  dispatch(fetchAdsRequest());
+}, [dispatch]);
 
   const handleAdView = useCallback(() => {
-    if (!user) return;
-    
-    dispatch(watchAdRequest());
-  }, [dispatch, user] );
+       window?.showGiga?.().then((e)=>{
+          dispatch(watchAdRequest());
+       })
+     
+  }, [dispatch ] );
 
   const handleTaskComplete = useCallback((taskId: string, taskUrl?: string) => {
     if (!user) return;
- 
     dispatch(completeTaskRequest(taskId, taskUrl));
   }, [dispatch, user ]);
-
-  const getTaskTypeColor = (type: string) => {
-    switch (type) {
-      case 'daily': return 'bg-blue-100 text-blue-800';
-      case 'social': return 'bg-green-100 text-green-800';
-      case 'special': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   
 
    
 
   return (
-    <>
-       
-        <div className="space-y-4 pt-12 pb-6">
-          {/* Enhanced Mobile PWA Status Cards */}
-        
-         
-          {/* Enhanced Mobile Header */}
-          <div className="px-4">
-            <Header
-              title="Earn Rewards"
-              subtitle="Complete tasks to earn  Points"
-              showBalance={true}
-            />
-          </div>
+    <Space direction="vertical" size="large" style={{ width: '100%', padding: '16px 0' }}>
+      {/* Header */}
+      <Header />
 
-          {/* Enhanced Mobile Task Card - Daily Ads */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg border mx-4 relative overflow-hidden">
-            {/* Gradient overlay for mobile enhancement */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-100 to-transparent rounded-bl-full opacity-50" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Ad Tasks</h3>
-        <div className="mb-4">
-          <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Completed: {adStats?.todayAdsViewed || 0} / {adStats?.dailyLimit || 100}</span>
-            <span>Ads Left: {adStats?.adsLeftToday || 0}</span>
-          </div>
-          <ProgressBar
+      {/* Daily Ads Card */}
+      <Card 
+        bordered={false}
+        style={{ 
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+          margin: '0 16px'
+        }}
+        bodyStyle={{ padding: 20 }}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Row align="middle" justify="space-between">
+            <Col>
+              <Title level={4} style={{ margin: 0, color: '#1565c0' }}>
+                <GiftOutlined style={{ marginRight: 8 }} />
+                Today's Ad Tasks
+              </Title>
+            </Col>
+            <Col>
+              <Badge 
+                count={adStats?.adsLeftToday || 0} 
+                style={{ backgroundColor: '#52c41a' }}
+                showZero
+              />
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Statistic
+                title="Completed"
+                value={adStats?.todayAdsViewed || 0}
+                suffix={`/ ${adStats?.dailyLimit || 100}`}
+                valueStyle={{ color: '#1890ff', fontSize: 18 }}
+              />
+            </Col>
+            <Col span={12}>
+              <Statistic
+                title="Ads Left"
+                value={adStats?.adsLeftToday || 0}
+                valueStyle={{ color: '#52c41a', fontSize: 18 }}
+              />
+            </Col>
+          </Row>
+
+          <Progress
             percent={((adStats?.todayAdsViewed || 0) / (adStats?.dailyLimit || 100)) * 100}
-            className="h-2"
+            strokeColor={{
+              '0%': '#108ee9',
+              '100%': '#87d068',
+            }}
+            style={{ margin: '8px 0' }}
           />
-        </div>
-        <p className="text-sm text-gray-600 mb-4">
-          Get <span className="font-semibold text-yellow-600">250 Points</span> for each ad view. Tasks reset every 24 hours.
-        </p>
-            <Button
-              onClick={handleAdView}
-              disabled={!adStats?.adsLeftToday || adsLoading}
-              className={`w-full py-4 px-4 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
-                !adStats?.adsLeftToday
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : adsLoading
-                    ? 'bg-blue-100 text-blue-600 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl'
-                }`}
-            
-            >
-              {adsLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-play-circle"></i>
-                  Watch Ad ({adStats?.adsLeftToday || 0} left)
-                </>
-              )}
-            </Button>
-          </div>
+
+          <Text type="secondary">
+            Get <Text strong style={{ color: '#faad14' }}>250 Points</Text> for each ad view. Tasks reset every 24 hours.
+          </Text>
+
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlayCircleOutlined />}
+            onClick={handleAdView}
+            disabled={!adStats?.adsLeftToday || adsLoading}
+            loading={adsLoading}
+            style={{
+              width: '100%',
+              height: 48,
+              borderRadius: 12,
+              background: !adStats?.adsLeftToday ? undefined : 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
+              border: 'none'
+            }}
+          >
+            {adsLoading ? 'Loading...' : `Watch Ad (${adStats?.adsLeftToday || 0} left)`}
+          </Button>
+        </Space>
+      </Card>
 
 
-          {/* Enhanced Mobile Progress Summary */}
-          <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl p-6 border mx-4 shadow-lg relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-bl from-purple-200 to-transparent rounded-full opacity-30" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Progress</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {tasks.filter(task => task.completed).length}
-            </div>
-            <div className="text-sm text-gray-600">Tasks Completed</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {tasks.filter(task => !task.completed).length}
-            </div>
-            <div className="text-sm text-gray-600">Tasks Remaining</div>
-          </div>
-        </div>
-        {tasks.length > 0 && (
-          <div className="mt-3">
-            <div className="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Overall Progress</span>
-              <span>{Math.round((tasks.filter(task => task.completed).length / tasks.length) * 100)}%</span>
-            </div>
-            <ProgressBar 
-              percent={(tasks.filter(task => task.completed).length / tasks.length) * 100}
-              className="h-2 bg-gradient-to-r from-blue-500 to-purple-500"
-            />
-          </div>
-        )}
-      </div>
+      {/* Progress Summary Card */}
+      <Card 
+        bordered={false}
+        style={{ 
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%)',
+          margin: '0 16px'
+        }}
+        bodyStyle={{ padding: 20 }}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Title level={4} style={{ margin: 0, color: '#389e0d' }}>
+            <TrophyOutlined style={{ marginRight: 8 }} />
+            Your Progress
+          </Title>
 
-          {/* Enhanced Mobile Available Ads Section */}
-          {ads.length > 0 && (
-            <div className="space-y-4 px-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">Available Ads</h3>
-            <div className="text-sm text-gray-600">
-              {ads.filter(ad => ad.available).length} ads available
-            </div>
-          </div>
-          <div className="grid gap-4">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Statistic
+                title="Tasks Completed"
+                value={tasks.filter(task => task.completed).length}
+                valueStyle={{ color: '#52c41a', fontSize: 24, fontWeight: 'bold' }}
+              />
+            </Col>
+            <Col span={12}>
+              <Statistic
+                title="Tasks Remaining"
+                value={tasks.filter(task => !task.completed).length}
+                valueStyle={{ color: '#fa8c16', fontSize: 24, fontWeight: 'bold' }}
+              />
+            </Col>
+          </Row>
+
+          {tasks.length > 0 && (
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Row justify="space-between">
+                <Text type="secondary">Overall Progress</Text>
+                <Text strong>{Math.round((tasks.filter(task => task.completed).length / tasks.length) * 100)}%</Text>
+              </Row>
+              <Progress 
+                percent={(tasks.filter(task => task.completed).length / tasks.length) * 100}
+                strokeColor={{
+                  '0%': '#52c41a',
+                  '100%': '#722ed1',
+                }}
+              />
+            </Space>
+          )}
+        </Space>
+      </Card>
+
+      {/* Available Ads Section */}
+      {ads.length > 0 && (
+        <Space direction="vertical" size="middle" style={{ width: '100%', padding: '0 16px' }}>
+          <Row justify="space-between" align="middle">
+            <Title level={4} style={{ margin: 0 }}>Available Ads</Title>
+            <Badge count={ads.filter(ad => ad.available).length} style={{ backgroundColor: '#52c41a' }} />
+          </Row>
+          
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {ads.map((ad) => (
-                <div
-                  key={ad.id}
-                  className={`bg-white rounded-2xl p-5 shadow-lg border transition-all duration-200 relative overflow-hidden ${
-                    !ad.available ? 'opacity-60' : 'active:scale-98'
-                  }`}
-                >
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full" />
-                <div className="flex items-center gap-4">
-                  <img
-                    src={ad.imageUrl}
-                    alt={ad.title}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        ad.type === 'video' ? 'bg-red-100 text-red-800' :
-                        ad.type === 'banner' ? 'bg-blue-100 text-blue-800' :
-                        'bg-purple-100 text-purple-800'
-                      }`}>
-                        {ad.type.charAt(0).toUpperCase() + ad.type.slice(1)}
-                      </span>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {ad.category}
-                      </span>
-                      <span className="text-xs text-gray-500">⏱️ {ad.duration}s</span>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">{ad.title}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{ad.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <span className="text-yellow-500">🪙</span>
-                        <span className="font-medium text-yellow-600">+{ad.reward} Points</span>
-                      </div>
-                        <button
+              <Card
+                key={ad.id}
+                bordered={false}
+                style={{ 
+                  borderRadius: 12,
+                  opacity: ad.available ? 1 : 0.6
+                }}
+                bodyStyle={{ padding: 16 }}
+              >
+                <Row gutter={16} align="middle">
+                  <Col flex="none">
+                    <Avatar 
+                      size={64} 
+                      src={ad.imageUrl} 
+                      style={{ borderRadius: 8 }}
+                    />
+                  </Col>
+                  <Col flex="auto">
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                      <Space wrap>
+                        <Tag color={ad.type === 'video' ? 'red' : ad.type === 'banner' ? 'blue' : 'purple'}>
+                          {ad.type.charAt(0).toUpperCase() + ad.type.slice(1)}
+                        </Tag>
+                        <Tag>{ad.category}</Tag>
+                        <Text type="secondary">
+                          <ClockCircleOutlined /> {ad.duration}s
+                        </Text>
+                      </Space>
+                      
+                      <Title level={5} style={{ margin: 0 }}>{ad.title}</Title>
+                      <Paragraph type="secondary" style={{ margin: 0, fontSize: 12 }}>
+                        {ad.description}
+                      </Paragraph>
+                      
+                      <Row justify="space-between" align="middle">
+                        <Text strong style={{ color: '#faad14' }}>
+                          +{ad.reward} Points
+                        </Text>
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<PlayCircleOutlined />}
                           onClick={handleAdView}
                           disabled={!ad.available || adsLoading}
-                          className={`px-6 py-3 text-sm rounded-xl font-semibold transition-all duration-200 active:scale-95 ${
-                            !ad.available
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : adsLoading
-                              ? 'bg-blue-100 text-blue-600 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg'
-                          }`}
+                          loading={adsLoading}
+                          style={{ borderRadius: 8 }}
                         >
-                        {adsLoading ? (
-                          <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                            Loading...
-                          </div>
-                        ) : (
-                          <>
-                            <i className="fas fa-play mr-1"></i>
-                            Watch Ad
-                          </>
-                        )}
-                        </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                          Watch Ad
+                        </Button>
+                      </Row>
+                    </Space>
+                  </Col>
+                </Row>
+              </Card>
             ))}
-          </div>
-        </div>
+          </Space>
+        </Space>
       )}
 
-          {/* Enhanced Mobile Bonus Tasks Section */}
-          <div className="space-y-4 px-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900">Available Tasks</h3>
-          <div className="text-sm text-gray-600">
-            {tasks.filter(task => !task.completed).length} tasks available
-          </div>
-        </div>
-        {tasks.filter(task => task.type !== 'daily').map((task, index) => {
-          const completed = task.completed;
-          const isLoading = tasksLoading;
-
-          return (
-              <div key={task.id} className={`bg-white rounded-2xl p-5 shadow-lg border transition-all duration-200 relative overflow-hidden ${
-                completed ? 'opacity-60' : 'active:scale-98'
-              }`}>
-                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-gray-50 to-transparent rounded-bl-full" />
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTaskTypeColor(task.type)}`}>
-                        {task.type.charAt(0).toUpperCase() + task.type.slice(1)}
-                      </span>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {task.category}
-                      </span>
-                      {completed && (
-                        <div className="flex items-center text-green-500 text-sm">
-                          <i className="fas fa-check-circle mr-1"></i>
-                          Done
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">{task.title}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <span className="text-yellow-500">🪙</span>
-                        <span className="font-medium text-yellow-600">+{task.reward} Points</span>
-                      </div>
-                      {task.duration && (
-                        <span className="text-xs text-gray-500">⏱️ {task.duration}</span>
-                      )}
-                    </div>
-                    {!completed && task.progress && (
-                      <div className="mt-2">
-                        <div className="flex justify-between text-xs text-gray-500 mb-1">
-                          <span>Completed by users: {task.progress.current}</span>
-                          <span>Left: {task.progress.max - task.progress.current}</span>
-                        </div>
-                        <ProgressBar 
-                          percent={task.progress.percentage} 
-                          className="h-1.5"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    {task.url && !completed && (
-                      <Button
-                        onClick={() => window.open(task.url, '_blank')}
-                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-1"
-                      >
-                        <i className="fab fa-telegram-plane"></i>
-                        Join
-                      </Button>
-                    )}
-                    <Button
-                      onClick={() => handleTaskComplete(task.id, task.url)}
-                      disabled={completed || isLoading}
-                      className={`px-4 py-2 text-sm rounded-xl font-semibold transition-all duration-200 ${completed
-                          ? 'bg-green-100 text-green-600 cursor-not-allowed'
-                          : isLoading
-                          ? 'bg-blue-100 text-blue-600 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 shadow-sm'
-                        }`}
-                    >
-                      {isLoading ? (
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                          Verifying...
-                        </div>
-                      ) : completed ? (
-                        'Completed'
-                      ) : (
-                        'Verify'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-           
+      {/* Available Tasks Section */}
+      <Space direction="vertical" size="middle" style={{ width: '100%', padding: '0 16px' }}>
+        <Row justify="space-between" align="middle">
+          <Title level={4} style={{ margin: 0 }}>Available Tasks</Title>
+          <Badge count={tasks.filter(task => !task.completed).length} style={{ backgroundColor: '#1890ff' }} />
+        </Row>
         
-          );
-        })}
-      </div>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {tasks.filter(task => task.type !== 'daily').map((task) => {
+            const completed = task.completed;
+            const isLoading = tasksLoading;
 
-          {/* Enhanced Mobile Daily Reset Info */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-200 mx-4 shadow-lg relative overflow-hidden">
-            <div className="absolute -bottom-5 -right-5 w-16 h-16 bg-gradient-to-tl from-blue-200 to-transparent rounded-full opacity-30" />
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600">ℹ️</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-blue-800 mb-1">
-                  Daily Reset Information
-                </p>
-                <p className="text-xs text-blue-600">
-                  Tasks reset every 24 hours. Complete them regularly to maximize your earnings!
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-  
-    </>
+            return (
+              <Card
+                key={task.id}
+                bordered={false}
+                style={{ 
+                  borderRadius: 12,
+                  opacity: completed ? 0.6 : 1
+                }}
+                bodyStyle={{ padding: 16 }}
+              >
+                <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                  <Space wrap>
+                    <Tag color={task.type === 'social' ? 'green' : task.type === 'special' ? 'purple' : 'blue'}>
+                      {task.type.charAt(0).toUpperCase() + task.type.slice(1)}
+                    </Tag>
+                    <Tag>{task.category}</Tag>
+                    {completed && (
+                      <Tag color="success" icon={<CheckCircleOutlined />}>
+                        Done
+                      </Tag>
+                    )}
+                  </Space>
+                  
+                  <Title level={5} style={{ margin: 0 }}>{task.title}</Title>
+                  <Paragraph type="secondary" style={{ margin: 0, fontSize: 12 }}>
+                    {task.description}
+                  </Paragraph>
+                  
+                  <Row justify="space-between" align="middle">
+                    <Text strong style={{ color: '#faad14' }}>
+                      +{task.reward} Points
+                    </Text>
+                    {task.duration && (
+                      <Text type="secondary">
+                        <ClockCircleOutlined /> {task.duration}
+                      </Text>
+                    )}
+                  </Row>
+
+                  {!completed && task.progress && (
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                      <Row justify="space-between">
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          Completed: {task.progress.current}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          Left: {task.progress.max - task.progress.current}
+                        </Text>
+                      </Row>
+                      <Progress 
+                        percent={task.progress.percentage} 
+                        size="small"
+                        strokeColor="#1890ff"
+                      />
+                    </Space>
+                  )}
+
+                  <Row gutter={8}>
+                    {task.url && !completed && (
+                      <Col>
+                        <Button
+                          size="small"
+                          onClick={() => window.open(task.url, '_blank')}
+                          style={{ borderRadius: 8 }}
+                        >
+                          Join
+                        </Button>
+                      </Col>
+                    )}
+                    <Col flex="auto">
+                      <Button
+                        type={completed ? "default" : "primary"}
+                        size="small"
+                        onClick={() => handleTaskComplete(task.id, task.url)}
+                        disabled={completed || isLoading}
+                        loading={isLoading}
+                        style={{ 
+                          width: '100%',
+                          borderRadius: 8,
+                          backgroundColor: completed ? '#f6ffed' : undefined,
+                          borderColor: completed ? '#b7eb8f' : undefined,
+                          color: completed ? '#52c41a' : undefined
+                        }}
+                      >
+                        {completed ? 'Completed' : 'Verify'}
+                      </Button>
+                    </Col>
+                  </Row>
+                </Space>
+              </Card>
+            );
+          })}
+        </Space>
+      </Space>
+
+      {/* Daily Reset Info Card */}
+      <Card 
+        bordered={false}
+        style={{ 
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%)',
+          margin: '0 16px'
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
+        <Row gutter={12} align="middle">
+          <Col flex="none">
+            <Avatar 
+              size={40} 
+              style={{ backgroundColor: '#1890ff' }}
+              icon={<InfoCircleOutlined />}
+            />
+          </Col>
+          <Col flex="auto">
+            <Space direction="vertical" size={0}>
+              <Text strong style={{ color: '#1890ff' }}>
+                Daily Reset Information
+              </Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                Tasks reset every 24 hours. Complete them regularly to maximize your earnings!
+              </Text>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
+    </Space>
   );
 }

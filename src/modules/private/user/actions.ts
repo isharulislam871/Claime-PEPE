@@ -100,8 +100,38 @@ export const createUserSuccess = (user: User) => ({
   payload: user
 });
 
-export const createUserFailure = (error: string) => ({
+export const createUserFailure = ( payload : { error: string; code : string; registeredIP : string; currentIP : string } ) => ({
   type: UserActionTypes.CREATE_USER_FAILURE,
+  payload 
+});
+
+// IP Verification Actions
+export const verifyIpRequest = () => ({
+  type: UserActionTypes.VERIFY_IP_REQUEST
+});
+
+export const verifyIpSuccess = (verified: boolean, message: string) => ({
+  type: UserActionTypes.VERIFY_IP_SUCCESS,
+  payload: { verified, message }
+});
+
+export const verifyIpFailure = (error: string) => ({
+  type: UserActionTypes.VERIFY_IP_FAILURE,
   payload: error
+});
+
+export const setCurrentIp = (ip: string) => ({
+  type: UserActionTypes.SET_CURRENT_IP,
+  payload: ip
+});
+
+export const setRegisteredIp = (ip: string) => ({
+  type: UserActionTypes.SET_REGISTERED_IP,
+  payload: ip
+});
+
+export const setVerificationCode = (code: string) => ({
+  type: UserActionTypes.SET_VERIFICATION_CODE,
+  payload: code
 });
  

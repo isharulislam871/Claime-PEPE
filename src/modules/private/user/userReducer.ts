@@ -4,6 +4,9 @@ const initialState: UserState = {
   users: [],
   loading: false,
   error: null,
+  registeredIP : null,
+  code : '',
+  currentIP : null,
   total: 0,
   currentPage: 1,
   pageSize: 10,
@@ -92,9 +95,46 @@ export const userReducer = (state = initialState, action: UserAction): UserState
       return {
         ...state,
         loading: false,
-        error: action.payload
+        error: action.payload.error,
+        registeredIP : action.payload.registeredIP,
+        code : action.payload.code,
+        currentIP : action.payload.currentIP,
       };
     
+    // IP Verification Cases
+    case UserActionTypes.VERIFY_IP_REQUEST:
+      return {
+        ...state,
+        loading: true,
+        error: null
+      };
+    case UserActionTypes.VERIFY_IP_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        error: null
+      };
+    case UserActionTypes.VERIFY_IP_FAILURE:
+      return {
+        ...state,
+        loading: false,
+        error: action.payload
+      };
+    case UserActionTypes.SET_CURRENT_IP:
+      return {
+        ...state,
+        currentIP: action.payload
+      };
+    case UserActionTypes.SET_REGISTERED_IP:
+      return {
+        ...state,
+        registeredIP: action.payload
+      };
+    case UserActionTypes.SET_VERIFICATION_CODE:
+      return {
+        ...state,
+        code: action.payload
+      };
     
     default:
       return state;
