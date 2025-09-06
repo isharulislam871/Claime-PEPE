@@ -4,34 +4,42 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   Popup,
-  Button,
   Card,
   List,
   Badge,
-  Toast,
   SpinLoading,
   Tabs,
-  
+  Empty,
+  PullToRefresh
 } from 'antd-mobile';
 import { 
   CloseOutline,
-  CheckOutline,
-  ClockCircleOutline,
+  RightOutline,
   PlayOutline,
-  EyeOutline,
-  StarOutline
+  CheckOutline,
+  CheckCircleOutline,
+  StarOutline,
+  EyeOutline
 } from 'antd-mobile-icons';
  
-import { selectCurrentUser } from '@/modules';
+import { fetchActivitiesRequest, selectActivities, selectAdsSettingsState, selectCurrentUser, watchAdRequest } from '@/modules';
 import { 
   selectTasks,
   selectTasksLoading,
   selectTaskStatus,
   selectAds,
-  selectAdsLoading
+  selectAdsLoading,
+  fetchTasksRequest,
+  fetchAdsRequest,
+  selectAdStats,
+ 
 } from '@/modules/private/task';
 import { DollarOutlined, GiftOutlined, TrophyOutlined } from '@ant-design/icons';
-import { Progress } from 'antd';
+import { Button, Progress } from 'antd';
+import { toast } from 'react-toastify';
+import { timeAgo } from '@/lib/timeAgo';
+import AdHistoryPopup from './AdHistoryPopup';
+
 
 interface NewEarnProps {
   isOpen: boolean;
@@ -50,12 +58,7 @@ interface Task {
   estimatedTime: string;
 }
 
-interface AdReward {
-  type: string;
-  reward: number;
-  available: boolean;
-  cooldown?: number;
-}
+ 
 
 export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
   const dispatch = useDispatch();
@@ -63,18 +66,46 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
   const tasks = useSelector(selectTasks);
   const tasksLoading = useSelector(selectTasksLoading);
   const taskStatus = useSelector(selectTaskStatus);
-  const ads = useSelector(selectAds);
+  const adStats = useSelector(selectAdStats);
   const adsLoading = useSelector(selectAdsLoading);
 
   const [activeTab, setActiveTab] = useState('tasks');
+  const [refreshing, setRefreshing] = useState(false);
+  const [showAdHistoryPopup, setShowAdHistoryPopup] = useState(false);
   const [completingTask, setCompletingTask] = useState<string | null>(null);
   const [watchingAd, setWatchingAd] = useState(false);
+  const adsseting = useSelector(selectAdsSettingsState);
+  const activities :any[] = useSelector(selectActivities);
 
+  useEffect(()=>{
+    dispatch(fetchTasksRequest());
+    dispatch(fetchAdsRequest());
+    dispatch(fetchActivitiesRequest({ type : 'ad_view' , limit : 10 }))
+  } ,[ dispatch ])
+
+ 
+  
+  const handleRefresh = async () => {
+    
+    try {
+      // Refresh tasks and ads data
+      dispatch(fetchTasksRequest());
+      dispatch(fetchAdsRequest());
+      dispatch(fetchActivitiesRequest({ type : 'ad_view' }))
+      
+      // Add a small delay to show the refresh animation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast.success('Data refreshed successfully!');
+    } catch (error) {
+      toast.error('Failed to refresh data');
+    } 
+  }; 
   const dailyProgress = {
-    tasksCompleted: 0, //taskStatus?.tasksCompletedToday || 
-    tasksLimit: 10,
-    adsWatched: user?.adsWatchedToday || 0,
-    adsLimit: 5
+    tasksCompleted: taskStatus?.tasksCompletedToday || 0,  
+    tasksLimit: tasks.length,
+    adsWatched: adStats?.todayAdsViewed || 0,
+    adsLimit: adsseting.settings?.adsWatchLimit || 0
   };
 
   const handleTaskComplete = async (task: Task) => {
@@ -89,15 +120,9 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
       // Mock completion
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      Toast.show({
-        content: `+${task.reward} points earned!`,
-        icon: 'success'
-      });
+      toast.success( `+${task.reward} points earned!`)
     } catch (error) {
-      Toast.show({
-        content: 'Failed to complete task',
-        icon: 'fail'
-      });
+      toast.error('Failed to complete task');
     } finally {
       setCompletingTask(null);
     }
@@ -106,20 +131,18 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
   const handleWatchAd = async () => {
     if (watchingAd) return;
     
+   
     setWatchingAd(true);
     try {
       // Trigger ad display
       if (window?.showGiga) {
         await window.showGiga();
-        Toast.show({
-          content: '+250 points earned!',
-          icon: 'success'
-        });
+        dispatch(watchAdRequest());
       } else {
-        Toast.show('Ad service not available');
+        toast.error('Ad service not available');
       }
     } catch (error) {
-      Toast.show('Failed to watch ad');
+      toast.error('Failed to watch ad');
     } finally {
       setWatchingAd(false);
     }
@@ -143,6 +166,8 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
     }
   };
 
+  
+
   const renderTasksTab = () => (
     <div className="space-y-4">
       {/* Daily Progress */}
@@ -158,6 +183,7 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
             <Progress 
               percent={(dailyProgress.tasksCompleted / dailyProgress.tasksLimit) * 100}
               strokeColor="#10b981"
+               
             />
           </div>
           
@@ -186,7 +212,7 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
           <List>
             {tasks.map((task: any) => (
               <List.Item
-                key={task._id}
+                key={task.id}
                 prefix={
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <TrophyOutlined className="text-blue-600 text-lg" />
@@ -236,63 +262,148 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
     </div>
   );
 
+  const handleCheckIn = () => {
+    window?.showGiga?.().then((e)=>{
+      ///dispatch(checkInRequest());
+      toast.info('api not created =>>> sooon')
+    })
+  }
+
+  const handleSpin = () => {
+    window?.showGiga?.().then((e)=>{
+      ///dispatch(checkInRequest());
+      toast.info('api not created =>>> sooon')
+    })
+  }
+    
+
   const renderAdsTab = () => (
     <div className="space-y-4">
+     
       {/* Ad Rewards Info */}
-      <Card title="Watch Ads & Earn" className="mb-4">
-        <div className="text-center py-4">
-          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <EyeOutline className="text-yellow-600 text-2xl" />
-          </div>
-          <h3 className="text-lg font-bold mb-2">Earn Points by Watching Ads</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Watch short video ads to earn instant rewards
-          </p>
-          <div className="bg-green-50 rounded-lg p-3 mb-4">
-            <div className="text-green-600 font-bold text-xl">+250 Points</div>
-            <div className="text-green-600 text-sm">Per Ad Watched</div>
-          </div>
-        </div>
-      </Card>
-
+ 
       {/* Watch Ad Button */}
-      <Card>
-        <div className="text-center py-6">
-          <Button
-            block
-            size="large"
-            color="warning"
-            loading={watchingAd}
-            onClick={handleWatchAd}
-            disabled={dailyProgress.adsWatched >= dailyProgress.adsLimit}
-            className="mb-4"
-          >
-            {watchingAd ? (
-              'Loading Ad...'
-            ) : dailyProgress.adsWatched >= dailyProgress.adsLimit ? (
-              'Daily Limit Reached'
+      {/* Enhanced Binance-style Watch Ad Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500 p-1 shadow-xl">
+        <div className="relative bg-white rounded-xl p-6">
+          {/* Header with animated icon */}
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative">
+              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                <PlayOutline className="text-white text-2xl" />
+              </div>
+              {!watchingAd && (
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Reward Display */}
+          <div className="text-center mb-6">
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border border-yellow-200">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">₿</span>
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                  + {adsseting.settings?.defaultAdsReward}
+                </span>
+                <span className="text-gray-600 font-medium">Points</span>
+              </div>
+              <div className="text-sm text-gray-500">Per advertisement watched</div>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-700">Daily Progress</span>
+              <span className="text-sm font-bold text-gray-900">
+                {dailyProgress.adsWatched}/{dailyProgress.adsLimit}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              
+            </div>
+          </div>
+
+          {/* Main Action Button */}
+          <div className="space-y-3">
+            {dailyProgress.adsWatched >= dailyProgress.adsLimit ? (
+              <div className="text-center py-4">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircleOutline className="text-gray-400 text-xl" />
+                </div>
+                <div className="text-gray-500 font-medium mb-2">Daily Limit Reached</div>
+                <div className="text-sm text-gray-400">Come back tomorrow for more rewards!</div>
+              </div>
             ) : (
               <>
-                <PlayOutline className="mr-2" />
-                Watch Ad Now
+                <Button
+                  block
+                  size="large"
+                  loading={watchingAd}
+                  onClick={handleWatchAd}
+                  className="!bg-gradient-to-r !from-yellow-400 !to-orange-500 !border-none !text-white !font-bold !text-lg !h-14 !rounded-xl hover:!from-yellow-500 hover:!to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                >
+                  {watchingAd ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <SpinLoading color="white" />
+                      <span>Loading Advertisement...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <PlayOutline className="text-xl" />
+                      <span>Watch & Earn Now</span>
+                    </div>
+                  )}
+                </Button>
+
+                {/* Stats Row */}
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 text-center border border-blue-200">
+                    <div className="text-blue-600 font-bold text-lg">{dailyProgress.adsLimit - dailyProgress.adsWatched}</div>
+                    <div className="text-blue-500 text-xs">Remaining</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 text-center border border-green-200">
+                    <div className="text-green-600 font-bold text-lg">{ user?.balance || 0}</div>
+                    <div className="text-green-500 text-xs">Earned Today</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 text-center border border-purple-200">
+                    <div className="text-purple-600 font-bold text-lg">{(dailyProgress.adsLimit - dailyProgress.adsWatched) * Number(adsseting.settings?.defaultAdsReward) }</div>
+                    <div className="text-purple-500 text-xs">Potential</div>
+                  </div>
+                </div>
               </>
             )}
-          </Button>
-          
-          <div className="text-sm text-gray-600">
-            {dailyProgress.adsWatched < dailyProgress.adsLimit ? (
-              `${dailyProgress.adsLimit - dailyProgress.adsWatched} ads remaining today`
-            ) : (
-              'Come back tomorrow for more ads!'
-            )}
+          </div>
+
+          {/* Footer Info */}
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Ads refresh every 24 hours</span>
+            </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Ad History */}
-      <Card title="Recent Ad Rewards">
+      <Card 
+        title="Recent Ad Rewards"
+        extra={
+          <span 
+            className="text-blue-600 text-sm cursor-pointer hover:text-blue-800"
+            onClick={() => setShowAdHistoryPopup(true)}
+          >
+            View All Ad History
+          </span>
+        }
+      >
         <List>
-          {[...Array(Math.min(3, dailyProgress.adsWatched))].map((_, index) => (
+          {activities.map((_data, index) => (
             <List.Item
               key={index}
               prefix={
@@ -301,13 +412,13 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
                 </div>
               }
               extra={
-                <span className="text-green-600 font-semibold">+250 pts</span>
+                <span className="text-green-600 font-semibold">+{_data.reward } pts</span>
               }
             >
               <div>
                 <div className="font-semibold">Video Ad Watched</div>
                 <div className="text-sm text-gray-600">
-                  {new Date(Date.now() - index * 3600000).toLocaleTimeString()}
+                <span>{timeAgo(_data.createdAt)}</span>
                 </div>
               </div>
             </List.Item>
@@ -315,7 +426,7 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
           
           {dailyProgress.adsWatched === 0 && (
             <div className="text-center py-8 text-gray-500">
-              No ads watched today
+             <Empty /> 
             </div>
           )}
         </List>
@@ -336,7 +447,7 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
             }
             description="Claim your daily login bonus"
             extra={
-              <Button size="small" color="primary">
+              <Button size="small" color='blue' onClick={handleCheckIn}>
                 Claim
               </Button>
             }
@@ -418,7 +529,6 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
               </div>
             </div>
             <Button 
-              fill='none' 
               size='small'
               onClick={onClose}
               className="!p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -438,12 +548,26 @@ export default function NewEarn({ isOpen, onClose }: NewEarnProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto px-4 py-4">
-          {activeTab === 'tasks' && renderTasksTab()}
-          {activeTab === 'ads' && renderAdsTab()}
-          {activeTab === 'bonus' && renderBonusTab()}
+        <div className="flex-1 overflow-auto">
+          <PullToRefresh
+            onRefresh={handleRefresh}
+             >
+          
+            <div className="px-4 py-4">
+              {activeTab === 'tasks' && renderTasksTab()}
+              {activeTab === 'ads' && renderAdsTab()}
+              {activeTab === 'bonus' && renderBonusTab()}
+            </div>
+          </PullToRefresh>
         </div>
       </div>
+
+      {/* Ad History Popup */}
+      <AdHistoryPopup
+        visible={showAdHistoryPopup}
+        onClose={() => setShowAdHistoryPopup(false)}
+
+      />
     </Popup>
   );
 }

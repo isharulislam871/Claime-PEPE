@@ -22,7 +22,7 @@ import {
   StarOutline
 } from 'antd-mobile-icons';
 
-import { selectCurrentUser } from '@/modules';
+import { createUserRequest, fetchBotConfigRequest, selectBotConfig, selectBotLoading, selectCurrentUser, selectUserLoading } from '@/modules';
 import { CopyFilled, ShareAltOutlined } from '@ant-design/icons';
 import { getCurrentUser } from '@/lib/api';
 import { toast } from 'react-toastify';
@@ -47,56 +47,25 @@ interface ReferralStats {
 export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarnProps) {
   const dispatch = useDispatch();
   const user = useSelector(selectCurrentUser);
-  const [loading, setLoading] = useState(false);
-  const [referralStats, setReferralStats] = useState<ReferralStats>({
-    totalReferrals: 0,
-    totalEarnings: 0,
-    recentReferrals: []
-  });
-
+ 
+  const botConfig = useSelector(selectBotConfig);
+  const UserLoading =  useSelector(selectUserLoading);
+  const BotLoading = useSelector(selectBotLoading);
+  const loading =  BotLoading || UserLoading;
   const currentUser = getCurrentUser();
-  const referralLink = `https://t.me/TaskUpBot?start=${currentUser.telegramId}`;
+  const referralLink = `https://t.me/${botConfig?.username}?startapp=${user?.referralCode}`;
 
   useEffect(() => {
     if (isOpen) {
-      fetchReferralStats();
+   
+      dispatch(fetchBotConfigRequest());
+      
     }
-  }, [isOpen]);
-
-  const fetchReferralStats = async () => {
-    setLoading(true);
-    try {
-      // Mock data - replace with actual API call
-      setTimeout(() => {
-        setReferralStats({
-          totalReferrals: user?.referralCount || 0,
-          totalEarnings: user?.referralEarnings || 0,
-          recentReferrals: [
-            {
-              id: '1',
-              username: 'Alice Johnson',
-              joinedAt: '2024-01-15',
-              earnings: 500,
-              status: 'active'
-            },
-            {
-              id: '2',
-              username: 'Bob Smith',
-              joinedAt: '2024-01-14',
-              earnings: 250,
-              status: 'active'
-            }
-          ]
-        });
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      setLoading(false);
-    }
-  };
-
+  }, [isOpen , dispatch]);
+ 
   const handleRefresh = async () => {
-    await fetchReferralStats();
+    dispatch(createUserRequest(currentUser))
+    dispatch(fetchBotConfigRequest());
     toast.success('Referral stats refreshed!');
   };
 
@@ -109,14 +78,14 @@ export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarn
     // Check if we're in Telegram WebApp
     if (window.Telegram?.WebApp) {
       // Use Telegram WebApp sharing
-      const shareText = `🎉 Join me on TaskUp and start earning rewards!\n\n💰 Complete simple tasks and earn points\n🎁 Get 500 bonus points when you join!\n\n👇 Click here to start:\n${referralLink}`;
+      const shareText = `🎉 Join me on  ${botConfig?.username.replace(/_?bot$/, "")} and start earning rewards!\n\n💰 Complete simple tasks and earn points\n🎁 Get 500 bonus points when you join!\n\n👇 Click here to start:\n${referralLink}`;
       
       window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`);
     } else if (navigator.share) {
       // Use native Web Share API
       navigator.share({
-        title: 'Join TaskUp and Earn!',
-        text: `🎉 Join me on TaskUp and start earning rewards by completing simple tasks! Get 500 bonus points when you join! 💰`,
+        title: `Join ${botConfig?.username.replace(/_?bot$/, "")} and Earn!`,
+        text: `🎉 Join me on  ${botConfig?.username.replace(/_?bot$/, "")} and start earning rewards by completing simple tasks! Get 500 bonus points when you join! 💰`,
         url: referralLink
       });
     } else {
@@ -124,25 +93,8 @@ export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarn
       copyReferralLink();
     }
   };
-
-  const shareToTelegramDirect = () => {
-    const shareText = `🎉 Join me on TaskUp and start earning rewards!\n\n💰 Complete simple tasks and earn points\n🎁 Get 500 bonus points when you join!\n\n👇 Click here to start:`;
-    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`;
-    
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.openTelegramLink(telegramShareUrl);
-    } else {
-      window.open(telegramShareUrl, '_blank');
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+ 
+ 
 
   return (
     <Popup
@@ -191,7 +143,7 @@ export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarn
                 ) : (
                   <>
                     <UserOutline className="text-3xl mb-2 mx-auto text-black" />
-                    <div className="text-2xl font-bold text-black">{referralStats.totalReferrals}</div>
+                    <div className="text-2xl font-bold text-black">{user?.referralCount}</div>
                     <div className="text-sm opacity-90 text-black">Total Referrals</div>
                   </>
                 )}
@@ -209,7 +161,7 @@ export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarn
                 ) : (
                   <>
                     <StarOutline className="text-3xl mb-2 mx-auto text-black" />
-                    <div className="text-2xl font-bold text-black">{referralStats.totalEarnings}</div>
+                    <div className="text-2xl font-bold text-black">{user?.totalEarned}</div>
                     <div className="text-sm opacity-90 text-black">Points Earned</div>
                   </>
                 )}

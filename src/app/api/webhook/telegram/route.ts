@@ -192,18 +192,26 @@ async function handleStartCommand( bot: TelegramBot,  chatId: number,  userId: s
         );
         return; // Don't send Mini App button for suspended users
       }
+
+      const botConfig = await BotConfig.findOne();
       
+      if (!botConfig) {
+        await bot.sendMessage(chatId, 
+          '❌ Bot configuration not found. Please try again later.'
+        );
+        return;
+      }
       // Welcome back existing user
       await bot.sendMessage(chatId, 
         `👋 Welcome back, ${userInfo.first_name}!\n\n` +
-        `💰 Balance: ${user.balance} PEPE\n` +
+        `💰 Balance: ${user.balance} Points\n` +
         `🎁 Referrals: ${user.referralCount}\n\n` +
         `📱 Ready to earn more?`,
         {
           reply_markup: {
             inline_keyboard: [[
               {
-                text: '📱 Open TaskUp',
+                text: ` 📱 Open ${botConfig.botUsername} `,
                 web_app: { url: webAppUrl }
               }
             ]]
@@ -225,14 +233,22 @@ async function handleStartCommand( bot: TelegramBot,  chatId: number,  userId: s
 // Send Web App button
 async function sendWebAppButton(bot: TelegramBot, chatId: number) {
   const webAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://your-app-url.com';
+  const botConfig = await BotConfig.findOne();
+
+  if (!botConfig) {
+    await bot.sendMessage(chatId, 
+      '❌ Bot configuration not found. Please try again later.'
+    );
+    return;
+  }
   
   await bot.sendMessage(chatId, 
-    '🚀 Open TaskUp Mini App to start earning!', 
+    `🚀 Open  ${botConfig?.username.replace(/_?bot$/, "")} Mini App to start earning!`, 
     {
       reply_markup: {
         inline_keyboard: [[
           {
-            text: '📱 Open TaskUp',
+            text: `📱 Open  ${botConfig?.username.replace(/_?bot$/, "")}`,
             web_app: { url: webAppUrl }
           }
         ]]
@@ -251,7 +267,8 @@ async function handleReferralCommand(bot: TelegramBot, chatId: number, userId: s
       return;
     }
     
-    const botInfo = await bot.getMe();
+    const botInfo : any = await bot.getMe();
+ 
     const referralLink = `https://t.me/${botInfo.username}?startapp=${user.referralCode}`;
     
     await bot.sendMessage(chatId, 
@@ -259,14 +276,14 @@ async function handleReferralCommand(bot: TelegramBot, chatId: number, userId: s
       `🔗 Referral Link: ${referralLink}\n` +
       `💎 Your Code: ${user.referralCode}\n` +
       `👥 Total Referrals: ${user.referralCount}\n` +
-      `💰 Referral Earnings: ${user.referralEarnings} PEPE\n\n` +
+      `💰 Referral Earnings: ${user.referralEarnings} Points\n\n` +
       `Share your link and earn 10% of your friends' earnings forever!`,
       {
         reply_markup: {
           inline_keyboard: [[
             {
               text: '📤 Share Referral Link',
-              url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('🚀 Join TaskUp and earn crypto by completing simple tasks!')}`
+              url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(` 🚀 Join  ${botInfo?.username.replace(/_?bot$/, "")} and earn crypto by completing simple tasks! `)}`
             }
           ]]
         }
@@ -290,9 +307,9 @@ async function handleBalanceCommand(bot: TelegramBot, chatId: number, userId: st
     
     await bot.sendMessage(chatId, 
       `💰 Your TaskUp Balance:\n\n` +
-      `💎 Current Balance: ${user.balance} PEPE\n` +
-      `📈 Total Earned: ${user.totalEarned} PEPE\n` +
-      `🎁 Referral Earnings: ${user.referralEarnings} PEPE\n` +
+      `💎 Current Balance: ${user.balance} Points\n` +
+      `📈 Total Earned: ${user.totalEarned} Points\n` +
+      `🎁 Referral Earnings: ${user.referralEarnings} Points\n` +
       `👥 Total Referrals: ${user.referralCount}\n\n` +
       `Keep completing tasks to earn more!`
     );

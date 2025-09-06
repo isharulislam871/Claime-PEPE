@@ -32,14 +32,14 @@ export async function POST(request: NextRequest) {
     // Get client IP address
     const clientIP = getClientIP(request);
 
-    const activity = await Activity.findOne({ hash });
+   /*  const activity = await Activity.findOne({ hash });
     if (activity) {
       return NextResponse.json({
         success: false,
         error: 'Hash already used. Please generate a new hash.',
         code: 'HASH_ALREADY_USED'
       }, { status: 409 });
-    }
+    } */
 
 
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
 
       // Check if the requesting IP matches the user's registered IP
-      if (existingUser.ipAddress && existingUser.ipAddress !== clientIP) {
+      /* if (existingUser.ipAddress && existingUser.ipAddress !== clientIP) {
         return NextResponse.json({
           success: false,
           error: 'Access denied. IP address mismatch. Please login from your registered device.',
@@ -65,12 +65,12 @@ export async function POST(request: NextRequest) {
           currentIP: clientIP
         }, { status: 403 });
       }
-
+ */
       // Update IP address if user doesn't have one (for existing users)
-      if (!existingUser.ipAddress) {
+       if (!existingUser.ipAddress) {
         existingUser.ipAddress = clientIP;
         await existingUser.save();
-      }
+      } 
 
 
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if IP address already exists (one account per IP)
-    const existingIPUser = await User.findOne({ ipAddress: clientIP });
+   /*  const existingIPUser = await User.findOne({ ipAddress: clientIP });
     if (existingIPUser) {
       return NextResponse.json(
         {
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         },
         { status: 409 }
       );
-    }
+    } */
 
     // Generate unique random referral code
     const referralCode = await generateUniqueReferralCode();
@@ -154,7 +154,8 @@ export async function POST(request: NextRequest) {
       const referrer = await User.findOne({ referralCode: referredBy });
       if (referrer) {
         referrer.referralCount += 1;
-        referrer.referralEarnings += 150; // Bonus for referrer
+        referrer.balance += 500; // Bonus for referrer
+        referrer.referralEarnings += 500
         await referrer.save();
 
       }

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import MaintenancePopup from './MaintenancePopup';
 
  
 interface AdsSettings {
@@ -15,19 +16,28 @@ interface AdsSettings {
   vpnNotAllowed: boolean;
 }
 
+interface MaintenanceData {
+  enabled: boolean;
+  message?: string;
+  estimatedDuration?: string;
+  startTime?: string;
+  endTime?: string;
+  reason?: string;
+  affectedServices?: string[];
+}
+
 interface AppInitializerProps {
-   
   setAdsSettings: (settings: AdsSettings | null) => void;
   checkVpnStatus: () => Promise<void>;
 }
 
 export default function AppInitializer({ 
- 
   setAdsSettings, 
   checkVpnStatus 
 }: AppInitializerProps) {
   const router = useRouter();
   const hasInitialized = useRef(false);
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
 
   // Memoize the initialization function to prevent recreating on every render
   const initializeApp = useCallback(async () => {
@@ -38,9 +48,9 @@ export default function AppInitializer({
       // Check maintenance status first
       const maintenanceResponse = await fetch('/api/maintenance');
       if (maintenanceResponse.ok) {
-        const maintenanceData = await maintenanceResponse.json();
-        if (maintenanceData.maintenance.enabled) {
-          router.push('/maintenance');
+        const maintenanceResponseData = await maintenanceResponse.json();
+        if (maintenanceResponseData.maintenance.enabled) {
+          setMaintenanceOpen(true);
           return;
         }
       }
@@ -86,5 +96,13 @@ export default function AppInitializer({
     initializeApp();
   }, [initializeApp]);
 
-  return null; // This component only handles initialization logic
+  return (
+    <>
+      <MaintenancePopup 
+        isOpen={maintenanceOpen}
+        onClose={() => setMaintenanceOpen(false)}
+        
+      />
+    </>
+  );
 }

@@ -27,7 +27,7 @@ import {
   GiftOutline
 } from 'antd-mobile-icons';
  
-import { selectCurrentUser } from '@/modules';
+import { createUserRequest, selectCurrentUser } from '@/modules';
 import { getCurrentUser } from '@/lib/api';
 import {
   DollarOutlined,
@@ -35,7 +35,9 @@ import {
   UserAddOutlined,
   WalletOutlined,
   HomeOutlined,
-  GiftOutlined
+  GiftOutlined,
+  HistoryOutlined,
+  SwapOutlined
 } from '@ant-design/icons';
 import { Avatar } from 'antd';
 import NewProfile from './NewProfile';
@@ -43,11 +45,10 @@ import NewWithdrawal from './NewWithdrawal';
 import NewEarn from './NewEarn';
 import InviteFriendsEarn from './InviteFriendsEarn';
 import { toast } from 'react-toastify';
+import WithdrawHistoryPopup from './WithdrawHistoryPopup';
+import NewSwap from './NewSwap';
 
-interface NewHomeProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+ 
 
 interface QuickAction {
   id: string;
@@ -71,17 +72,17 @@ export default function NewHome( ) {
   const dispatch = useDispatch();
   const user = useSelector(selectCurrentUser);
   const [loading, setLoading] = useState(false);
-  const [dailyStreak, setDailyStreak] = useState(7);
-  const [todayEarnings, setTodayEarnings] = useState(1250);
+ 
   const [isOpenProfile, setIsOpenProfile] = useState(false);
   const [isOpenWithdraw, setIsOpenWithdraw] = useState(false);
-  const [isMaintenance, setIsMaintenance] = useState(false);
   const [isInviteFriendsEarn, setIsInviteFriendsEarn] = useState(false);
   const currentUser = getCurrentUser();
   const [isEarn, setIsEarn] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isSwapOpen, setIsSwapOpen] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const [showClaimSheet, setShowClaimSheet] = useState(false);
-
+  
   
   const quickActions: QuickAction[] = [
     {
@@ -104,6 +105,20 @@ export default function NewHome( ) {
       icon: <UserAddOutlined className="text-purple-600 text-xl" />,
       color: 'bg-purple-100',
       action: () =>  setIsInviteFriendsEarn(true)
+    },
+    {
+      id: 'swap',
+      title: 'Swap',
+      icon: <SwapOutlined className="text-cyan-600 text-xl" />,
+      color: 'bg-cyan-100',
+      action: () => setIsSwapOpen(true)
+    },
+    {
+      id: 'history',
+      title: 'History',
+      icon: <HistoryOutlined className="text-indigo-600 text-xl" />,
+      color: 'bg-indigo-100',
+      action: () => setIsHistoryOpen(true)
     },
     {
       id: 'profile',
@@ -187,10 +202,7 @@ export default function NewHome( ) {
       // Simulate API calls to refresh data
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Update data (in real app, these would be API calls)
-      setDailyStreak(prev => prev + Math.floor(Math.random() * 2));
-      setTodayEarnings(prev => prev + Math.floor(Math.random() * 100));
-      
+       dispatch(createUserRequest(currentUser));
       toast.success('Data refreshed successfully!');
     } catch (error) {
       toast.error('Failed to refresh data');
@@ -257,12 +269,15 @@ export default function NewHome( ) {
                       <div className="text-xs text-black/70 font-medium">Points</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-green-700">{dailyStreak}</div>
-                      <div className="text-xs text-black/70 font-medium">Day Streak</div>
+                      <div className="text-sm font-semibold text-green-700">
+                        ${((user?.balance || 0) * 0.25 / 10000).toFixed(4)}
+                      </div>
+                      <div className="text-xs text-black/70 font-medium">USD Value</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-orange-700">{todayEarnings}</div>
-                      <div className="text-xs text-black/70 font-medium">Today</div>
+                    <div className="text-center bg-black/10 px-2 py-1 rounded-md">
+                      <div className="text-xs text-black/80 font-medium">
+                        10k pts = $0.25
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -316,17 +331,17 @@ export default function NewHome( ) {
             ) : (
               <>
                 <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">5</div>
+                  <div className="text-2xl font-bold text-green-600">0</div>
                   <div className="text-xs text-green-600">Tasks Done</div>
                 </div>
 
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">3</div>
+                  <div className="text-2xl font-bold text-blue-600">{ user?.adsWatchedToday || 0}</div>
                   <div className="text-xs text-blue-600">Ads Watched</div>
                 </div>
 
                 <div className="text-center p-3 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">2</div>
+                  <div className="text-2xl font-bold text-purple-600">{ user?.referralCount || 0 }</div>
                   <div className="text-xs text-purple-600">Referrals</div>
                 </div>
               </>
@@ -468,6 +483,8 @@ export default function NewHome( ) {
       <NewWithdrawal isOpen={  isOpenWithdraw } onClose={ () => setIsOpenWithdraw(false) } />
        <NewEarn isOpen={  isEarn } onClose={ () => setIsEarn(false) } />
         <InviteFriendsEarn isOpen={  isInviteFriendsEarn } onClose={ () => setIsInviteFriendsEarn(false) } />
+          < WithdrawHistoryPopup visible={  isHistoryOpen  } onClose={ () => setIsHistoryOpen(false) } />
+          < NewSwap isOpen={  isSwapOpen  } onClose={ () => setIsSwapOpen(false) } />
     </>
   );
 }

@@ -19,6 +19,8 @@ export interface TaskStatus {
   completedTasks: string[];
   lastCompletedDate?: string;
   totalCompleted: number;
+  tasksCompletedToday: number;
+  todayAdsViewed : number;
 }
 
 export interface AdStats {
@@ -26,6 +28,7 @@ export interface AdStats {
   dailyLimit: number;
   adsLeftToday: number;
   totalAdsViewed: number;
+  balance: number;
 }
 
 export interface TaskState {

@@ -16,17 +16,23 @@ import {
 import {
   CloseOutline,
   UserOutline,
-
   BellOutline,
-
   QuestionCircleOutline,
   RightOutline,
-  EditSOutline
+  EditSOutline,
+  MessageOutline,
+  PhonebookOutline,
+  GlobalOutline,
+  FileOutline,
+  StarOutline,
+  ExclamationCircleOutline,
+  MailOutline
 } from 'antd-mobile-icons';
 
 import { selectCurrentUser } from '@/modules';
 import { getCurrentUser } from '@/lib/api';
 import { SecurityScanOutlined, SettingOutlined } from '@ant-design/icons';
+import SupportHelpPopup from './SupportHelpPopup';
 
 interface NewProfileProps {
   isOpen: boolean;
@@ -48,6 +54,8 @@ export default function NewProfile({ isOpen, onClose }: NewProfileProps) {
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [supportHelpOpen, setSupportHelpOpen] = useState(false);
+   
   const [userStats, setUserStats] = useState<UserStats>({
     totalEarned: 0,
     tasksCompleted: 0,
@@ -107,12 +115,10 @@ export default function NewProfile({ isOpen, onClose }: NewProfileProps) {
   };
 
   const handleSupport = () => {
-    Toast.show('Support center coming soon!');
+    setSupportHelpOpen(true);
   };
 
-  const handleLogout = () => {
-    Toast.show('Logout functionality coming soon!');
-  };
+  
 
   return (
     <Popup
@@ -169,13 +175,7 @@ export default function NewProfile({ isOpen, onClose }: NewProfileProps) {
                   <h3 className="text-xl font-bold text-gray-900">
                     {user?.username || currentUser.username}
                   </h3>
-                  <Button
-                    size="mini"
-                    fill="outline"
-                    onClick={handleEditProfile}
-                  >
-                    <EditSOutline />
-                  </Button>
+                  
                 </div>
 
                 <p className="text-sm text-gray-600 mb-2">
@@ -291,22 +291,22 @@ export default function NewProfile({ isOpen, onClose }: NewProfileProps) {
                 clickable
                 onClick={handleSupport}
               >
-                Help Center
-              </List.Item>
-
-              <List.Item
-                prefix={<UserOutline />}
-                extra={<RightOutline />}
-                clickable
-                onClick={handleSupport}
-              >
-                Contact Support
+                <div>
+                  <div className="font-medium">Help Center</div>
+                  <div className="text-sm text-gray-500">Get help, report issues, and more</div>
+                </div>
               </List.Item>
             </List>
           </Card>
  
         </div>
       </div>
+
+      {/* Support Help Popup */}
+      <SupportHelpPopup 
+        isOpen={supportHelpOpen} 
+        onClose={() => setSupportHelpOpen(false)} 
+      />
     </Popup>
   );
 }

@@ -2,7 +2,9 @@ import { all, fork, Effect } from 'redux-saga/effects';
 import { withdrawalsSaga , userSaga } from './private';
 import { taskSaga } from './private/task';
 import { coinSaga } from './private/coin';
-
+import { botSaga } from './private/bot';
+import { adsSettingsSaga } from './public';
+import { activitySaga } from './private/activity';
 // Public sagas
  
 export function* rootSaga(): Generator<Effect, void, unknown> {
@@ -10,6 +12,9 @@ export function* rootSaga(): Generator<Effect, void, unknown> {
     fork(withdrawalsSaga),
     fork(userSaga),
     fork(taskSaga),
-    fork(coinSaga)
+    fork(coinSaga),
+    fork(botSaga),
+    fork(adsSettingsSaga),
+    fork(activitySaga),
   ]);
 }

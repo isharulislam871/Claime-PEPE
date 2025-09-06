@@ -8,7 +8,7 @@ import VpnManager from '@/components/VpnManager';
 import AdsScriptLoader from '@/components/AdsScriptLoader';
 import { getCurrentUser } from '@/lib/api';
 import { useDispatch } from 'react-redux';
-import { createUserRequest } from '@/modules';
+import { createUserRequest,   fetchAdsSettingsRequest } from '@/modules';
 import NewHome from '@/components/NewHome';
 
 interface AdsSettings {
@@ -42,8 +42,9 @@ export default function Home() {
   };
 
   useEffect(()=>{
-    const currentUser = getCurrentUser();
-      dispatch(createUserRequest(currentUser))
+      const currentUser = getCurrentUser();
+      dispatch(createUserRequest(currentUser));
+      dispatch(fetchAdsSettingsRequest());
   }, [ dispatch ])
 
   

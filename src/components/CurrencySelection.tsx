@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, ActionSheet } from 'antd-mobile';
+import { useState, useMemo } from 'react';
+import { Card } from 'antd-mobile';
 import { useSelector } from 'react-redux';
 import { selectCoins } from '../modules/private/coin';
+import CurrencySelectionPopup from './CurrencySelectionPopup';
 
 interface CurrencySelectionProps {
   selectedCurrency: string;
@@ -24,19 +25,44 @@ export default function CurrencySelection({
   title = "Currency",
   className = "mb-4"
 }: CurrencySelectionProps) {
-  const [showCurrencySheet, setShowCurrencySheet] = useState(false);
+  const [showCurrencyPopup, setShowCurrencyPopup] = useState(false);
   const coins = useSelector(selectCoins);
 
-  const handleCurrencySelect = (currency: string) => {
-    onCurrencyChange(currency);
-    setShowCurrencySheet(false);
+  const handleCurrencySelect = (currencyId: string) => {
+    onCurrencyChange(currencyId);
+    setShowCurrencyPopup(false);
   };
+
+  // Default currencies
+  const defaultCurrencies = [
+    { symbol: 'USDT', name: 'Tether USD', icon: '💵' },
+    { symbol: 'BTC', name: 'Bitcoin', icon: '₿' },
+    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ' },
+    { symbol: 'PEPE', name: 'Pepe', icon: '🐸' }
+  ];
+
+  // Convert coins to CurrencySelectionPopup format
+  const currencyItems = useMemo(() => {
+    // Use coins from Redux if available, otherwise use default currencies
+    const availableCurrencies = coins.length > 0 ? coins : defaultCurrencies;
+    
+    return availableCurrencies.map((coin) => ({
+      id: coin.symbol,
+      symbol: coin.symbol,
+      name: coin.name || coin.symbol,
+      icon: coin.icon || '💰',
+      balance: getAvailableBalance(coin.symbol),
+      usdValue: getUsdValue(coin.symbol, getAvailableBalance(coin.symbol)),
+      logoUrl: getCurrencyLogo(coin.symbol),
+      category: 'Cryptocurrencies'
+    }));
+  }, [coins, getAvailableBalance, getUsdValue, getCurrencyLogo]);
 
   return (
     <>
       <Card title={title} className={className}>
         <div
-          onClick={() => setShowCurrencySheet(true)}
+          onClick={() => setShowCurrencyPopup(true)}
           className="
             px-4 py-3
             border border-gray-300 rounded-md
@@ -70,31 +96,17 @@ export default function CurrencySelection({
         </div>
       </Card>
 
-      {/* Currency ActionSheet */}
-      <ActionSheet
-        visible={showCurrencySheet}
-        actions={coins.map((coin) => ({
-          key: coin.symbol,
-          text: (
-            <div className="w-full flex items-center gap-3 text-left">
-              <img
-                src={coin.logoUrl || getCurrencyLogo(coin.symbol)}
-                alt={coin.symbol}
-                className="w-8 h-8 rounded-full"
-              />
-              <div>
-                <div className="font-bold text-base">{coin.symbol}</div>
-                <div className="text-xs text-gray-600 mt-0.5">
-                  Balance: {getAvailableBalance(coin.symbol).toFixed(8)} (~$
-                  {getUsdValue(coin.symbol, getAvailableBalance(coin.symbol))})
-                </div>
-              </div>
-            </div>
-          ),
-          onClick: () => handleCurrencySelect(coin.symbol),
-        }))}
-        onClose={() => setShowCurrencySheet(false)}
-        cancelText="Cancel"
+      {/* Currency Selection Popup */}
+      <CurrencySelectionPopup
+        visible={showCurrencyPopup}
+        onClose={() => setShowCurrencyPopup(false)}
+        title="Select Currency"
+        currencies={currencyItems}
+        selectedCurrency={selectedCurrency}
+        onCurrencySelect={handleCurrencySelect}
+        searchPlaceholder="Search currencies..."
+        showBalance={true}
+        showCategories={false}
       />
     </>
   );

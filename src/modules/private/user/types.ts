@@ -26,6 +26,7 @@ export interface User {
   referredBy?: string;
   telegramId?: string;
   lastSpinDate?: string;
+  referralCode?: string;
 }
 
 export interface SpinWheelState {

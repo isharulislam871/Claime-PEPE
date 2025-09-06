@@ -82,3 +82,16 @@ export async function getBotInfo(botToken: string) {
     return null;
   }
 }
+
+
+export async function getChatMember(botToken: string , chatId: number | string , userId: number) {
+  try {
+    const bot = new TelegramBot(botToken, { polling: false });
+    
+    const info = await bot.getChatMember(chatId, userId);
+    return info;
+  } catch (error) {
+    console.error('Error getting bot info:', error);
+    return null;
+  }
+}
