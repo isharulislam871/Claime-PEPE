@@ -632,8 +632,7 @@ export default function WithdrawTab() {
     {/*  <NewProfile isOpen={true} onClose={() => console.log('close')} /> */}
 
     {/* <NewEarn isOpen={true} onClose={() => console.log('close')}  /> */}
-    <NewHome  isOpen={true} onClose={() => console.log('close')} 
-/>
+ 
     </div>
   );
 }
