@@ -133,7 +133,8 @@ function* watchAdSaga(): Generator<Effect, void, unknown> {
  
     if (status === 200) {
       yield put(watchAdSuccess(response));
-      // Refresh ads data after watching
+      
+      toast.success('watch Ad Success');
       yield put(fetchAdsRequest());
       return;
     }

@@ -1,23 +1,26 @@
 import { call, put, takeEvery } from 'redux-saga/effects';
 import { WITHDRAWALS_FETCH_REQUEST } from './constants';
 import { fetchWithdrawalsSuccess, fetchWithdrawalsFailure } from './actions';
-import { FetchWithdrawalsPayload } from './types';
+ 
+import { encrypt } from '@/lib/authlib';
+import { getCurrentUser } from '@/lib/api';
+import { API_CALL, TypeApiPromise } from '@/lib/client';
+import { toast } from 'react-toastify';
 
-// Mock API call - replace with actual API endpoint
-const fetchWithdrawalsAPI = async (telegramId: string) => {
-  // Replace this with your actual API call
-  const response = await fetch(`/api/withdrawals/${telegramId}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch withdrawals');
-  }
-  return response.json();
-};
+ 
 
-function* fetchWithdrawalsSaga(action: { type: string; payload: FetchWithdrawalsPayload }): Generator<any, void, any> {
+function* fetchWithdrawalsSaga( ): Generator<any, void, any> {
   try {
-    const { telegramId } = action.payload;
-    const withdrawals = yield call(fetchWithdrawalsAPI, telegramId);
-    yield put(fetchWithdrawalsSuccess(withdrawals));
+    const currentUser = getCurrentUser();
+    const hash = encrypt(currentUser.telegramId);
+
+     const{ response , status } : any = yield call(API_CALL, { url : '/withdrawals' , params : { hash }});
+    if(status === 200){
+        yield put(fetchWithdrawalsSuccess(response?.withdrawals));
+        return;
+     }
+     toast.error(response?.error || 'Failed to fetch withdrawals');
+     yield put(fetchWithdrawalsFailure(response?.error || 'Failed to fetch withdrawals'));
   } catch (error: any) {
     yield put(fetchWithdrawalsFailure(error.message || 'Failed to fetch withdrawals'));
   }

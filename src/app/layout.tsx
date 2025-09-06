@@ -59,7 +59,7 @@ export default function RootLayout({
           <AuthProvider>
             <ReduxProvider>
               <SocketProvider>
-                <div id="app-container" className="">
+                <div id="root" className="">
                   {children}
                 </div>
              

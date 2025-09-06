@@ -10,8 +10,23 @@ import { getCurrentUser } from '../lib/api';
 import RecentWithdrawals from './RecentWithdrawals';
 import ProcessingActionSheet from './ProcessingActionSheet';
 import ConfirmationActionSheet from './ConfirmationActionSheet';
+import CurrencySelection from './CurrencySelection';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectUserBalance } from '../modules';
+import { 
+  fetchCoinsRequest, 
+  fetchConversionRatesRequest,
+  selectCoins,
+  selectPepeConversionRates,
+  selectUsdRates,
+  selectCoinLoading,
+  selectCoinError
+} from '../modules/private/coin';
+import InviteFriendsEarn from './InviteFriendsEarn';
+import NewWithdrawal from './NewWithdrawal';
+import NewProfile from './NewProfile';
+import NewEarn from './NewEarn';
+import NewHome from './NewHome';
  
 
 interface WithdrawFormData {
@@ -35,20 +50,29 @@ interface CoinData {
 }
 
 export default function WithdrawTab() {
-  
   const dispatch = useDispatch();
   const mainPepeBalance = useSelector(selectUserBalance);
-  
+  const coins = useSelector(selectCoins);
+ 
   const [formData, setFormData] = useState<WithdrawFormData>({
-    currency: 'USDTX',
+    currency: 'USDT', // Default fallback
     network: 'ethereum',
     address: '',
     amount: '',
     memo: ''
   });
+
+  // Update currency when coins are loaded
+  useEffect(() => {
+    if (coins.length > 0 && (!formData.currency || formData.currency === 'USDT')) {
+      setFormData(prev => ({
+        ...prev,
+        currency: coins[0].symbol
+      }));
+    }
+  }, [coins, formData.currency]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCurrencySheet, setShowCurrencySheet] = useState(false);
   const [showNetworkSheet, setShowNetworkSheet] = useState(false);
   const [showRecentWithdrawals, setShowRecentWithdrawals] = useState(false);
   const [showProcessingSheet, setShowProcessingSheet] = useState(false);
@@ -58,35 +82,26 @@ export default function WithdrawTab() {
   const [errorMessage, setErrorMessage] = useState('');
   const [currentWithdrawalId, setCurrentWithdrawalId] = useState<string | null>(null);
   
-  // Dynamic data from APIs
-  const [coins, setCoins] = useState<CoinData[]>([]);
-  const [pepeConversionRates, setPepeConversionRates] = useState<Record<string, number>>({});
-  const [usdRates, setUsdRates] = useState<Record<string, number>>({});
+  
+  const pepeConversionRates = useSelector(selectPepeConversionRates);
+  const usdRates = useSelector(selectUsdRates);
+  const coinLoading = useSelector(selectCoinLoading);
+  const coinError = useSelector(selectCoinError);
+  
+  // Local state for network fees and other data
   const [networkFees, setNetworkFees] = useState<Record<string, number>>({});
-  const [dataLoading, setDataLoading] = useState(true);
+ 
 
-  // Fetch dynamic data from APIs
+  // Fetch dynamic data from Redux and APIs
   useEffect(() => {
-    const fetchData = async () => {
+    // Dispatch Redux actions to fetch coins and conversion rates
+    dispatch(fetchCoinsRequest());
+    dispatch(fetchConversionRatesRequest());
+    
+    const fetchNetworkFees = async () => {
       try {
-        setDataLoading(true);
         
-        // Fetch coins
-        const coinsResponse = await fetch('/api/coins');
-        const coinsData = await coinsResponse.json();
-        if (coinsData.success) {
-          setCoins(coinsData.coins);
-        }
-
-        // Fetch conversion rates
-        const ratesResponse = await fetch('/api/conversion-rates');
-        const ratesData = await ratesResponse.json();
-        if (ratesData.success) {
-          setPepeConversionRates(ratesData.pepeConversionRates);
-          setUsdRates(ratesData.usdRates);
-        }
-
-        // Fetch network fees
+        // Fetch network fees (keep this as direct API call for now)
         const feesResponse = await fetch('/api/network-fees');
         const feesData = await feesResponse.json();
         if (feesData.success) {
@@ -96,12 +111,12 @@ export default function WithdrawTab() {
         console.error('Error fetching data:', error);
         Toast.show('Failed to load coin data');
       } finally {
-        setDataLoading(false);
+    
       }
     };
 
-    fetchData();
-  }, []);
+    fetchNetworkFees();
+  }, [dispatch]);
 
   // Calculate available balance for each currency based on main PEPE balance
   const getAvailableBalance = (currency: string) => {
@@ -363,243 +378,220 @@ export default function WithdrawTab() {
         <div className="p-4 space-y-4 pb-6">
        
         {/* Currency Selection */}
-        <Card title="Currency" style={{ marginBottom: '16px' }}>
-          <div 
-            onClick={() => setShowCurrencySheet(true)}
-            style={{
-              padding: '12px 16px',
-              border: '1px solid #d9d9d9',
-              borderRadius: '6px',
-              backgroundColor: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img 
-                src={getCurrencyLogo(formData.currency)} 
-                alt={formData.currency}
-                style={{ width: '32px', height: '32px', borderRadius: '50%' }}
-              />
-              <div>
-                <div style={{ fontWeight: 'bold' }}>{formData.currency}</div>
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  Balance: {getAvailableBalance(formData.currency).toFixed(8)} (~${getUsdValue(formData.currency, getAvailableBalance(formData.currency))})
-                </div>
-              </div>
-            </div>
-            <div style={{ color: '#999' }}>▼</div>
-          </div>
-        </Card>
+        <CurrencySelection
+          selectedCurrency={formData.currency}
+          onCurrencyChange={(currency) => handleInputChange('currency', currency)}
+          getAvailableBalance={getAvailableBalance}
+          getUsdValue={getUsdValue}
+          getCurrencyLogo={getCurrencyLogo}
+          title="Currency"
+        />
 
-        {/* Network Selection */}
-        <Card title="Network" style={{ marginBottom: '16px' }}>
-          <div 
-            onClick={() => setShowNetworkSheet(true)}
-            style={{
-              padding: '12px 16px',
-              border: '1px solid #d9d9d9',
-              borderRadius: '6px',
-              backgroundColor: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img 
-                src={getNetworkLogo(formData.network)} 
-                alt={formData.network}
-                style={{ width: '24px', height: '24px', borderRadius: '50%' }}
-              />
-              <div>
-                <div style={{ fontWeight: 'bold' }}>{formData.network.toUpperCase()}</div>
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  Fee: {getCurrentFee()} {formData.currency}
-                </div>
-              </div>
-            </div>
-            <div style={{ color: '#999' }}>▼</div>
-          </div>
-        </Card>
 
-        {/* Withdrawal Address */}
-        <Card title="Withdrawal Address" style={{ marginBottom: '16px' }}>
-          <div style={{ position: 'relative' }}>
-            <Input
-              value={formData.address}
-              onChange={(value) => handleInputChange('address', value)}
-              placeholder="Enter wallet address"
-              clearable
-            />
-            <div 
-              style={{ 
-                position: 'absolute', 
-                right: '8px', 
-                top: '50%', 
-                transform: 'translateY(-50%)',
-                cursor: 'pointer',
-                padding: '4px',
-                zIndex: 10
-              }}
-              onClick={() => {
-                navigator.clipboard.readText().then(text => {
-                  handleInputChange('address', text);
-                  Toast.show('Address pasted');
-                }).catch(() => Toast.show('Failed to paste'));
-              }}
-            >
-              <FileOutline style={{ color: '#F0B90B', fontSize: '16px' }} />
-            </div>
-          </div>
-        </Card>
+     {/* Network Selection */}
+<Card title="Network" className="mb-4">
+  <div
+    onClick={() => setShowNetworkSheet(true)}
+    className="
+      px-4 py-3
+      border border-gray-300 rounded-md
+      bg-white cursor-pointer
+      flex justify-between items-center
+      hover:bg-gray-50
+    "
+  >
+    {/* Left side */}
+    <div className="flex items-center gap-3">
+      <img
+        src={getNetworkLogo(formData.network)}
+        alt={formData.network}
+        className="w-6 h-6 rounded-full"
+      />
+      <div>
+        <div className="font-bold">{formData.network.toUpperCase()}</div>
+        <div className="text-xs text-gray-600">
+          Fee: {getCurrentFee()} {formData.currency}
+        </div>
+      </div>
+    </div>
 
-        {/* Memo (if needed) */}
-       
-          <Card title="Memo (Optional)" style={{ marginBottom: '16px' }}>
-            <Input
-              value={formData.memo}
-              onChange={(value) => handleInputChange('memo', value)}
-              placeholder="Enter memo if required"
-              clearable
-            />
-          </Card>
+    {/* Right side (chevron) */}
+    <div className="text-gray-400">▼</div>
+  </div>
+</Card>
+
+
+       {/* Withdrawal Address */}
+<Card title="Withdrawal Address" className="mb-4">
+  <div className="relative">
+    <Input
+      value={formData.address}
+      onChange={(value) => handleInputChange('address', value)}
+      placeholder="Enter wallet address"
+      clearable
+      className="pr-10" // add space for the paste button
+    />
+
+    {/* Paste button */}
+    <div
+      className="
+        absolute right-2 top-1/2 -translate-y-1/2
+        cursor-pointer p-1 z-10
+      "
+      onClick={() => {
+        navigator.clipboard.readText()
+          .then(text => {
+            handleInputChange('address', text);
+            Toast.show('Address pasted');
+          })
+          .catch(() => Toast.show('Failed to paste'));
+      }}
+    >
+      <FileOutline className="text-[#F0B90B] text-base" />
+    </div>
+  </div>
+</Card>
+
+
+      {/* Memo (Optional) */}
+<Card title="Memo (Optional)" className="mb-4">
+  <Input
+    value={formData.memo}
+    onChange={(value) => handleInputChange('memo', value)}
+    placeholder="Enter memo if required"
+    clearable
+    className="w-full"
+  />
+</Card>
+
   
 
-        {/* Amount */}
-        <Card 
-          title="Amount" 
-          extra={
-            <Button 
-              size="small" 
-              fill="none" 
-              color="primary"
-              onClick={() => handleInputChange('amount', Math.max(0, getAvailableBalance(formData.currency) - getCurrentFee()).toString())}
-            >
-              Max
-            </Button>
-          }
-          style={{ marginBottom: '16px' }}
-        >
-          <Input
-            type="number"
-            value={formData.amount}
-            onChange={(value) => handleInputChange('amount', value)}
-            placeholder="0.00"
-            
-            clearable
-          />
-        </Card>
+       {/* Amount */}
+<Card
+  title="Amount"
+  className="mb-4"
+  extra={
+    <Button
+      size="small"
+      fill="none"
+      color="primary"
+      onClick={() =>
+        handleInputChange(
+          'amount',
+          Math.max(0, getAvailableBalance(formData.currency) - getCurrentFee()).toString()
+        )
+      }
+      className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+    >
+      Max
+    </Button>
+  }
+>
+  <Input
+    type="number"
+    value={formData.amount}
+    onChange={(value) => handleInputChange('amount', value)}
+    placeholder="0.00"
+    clearable
+    className="w-full"
+  />
+</Card>
 
-        {/* Transaction Summary */}
-        {formData.amount && (
-          <Card title="Transaction Summary" style={{ marginBottom: '16px' }}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Amount</span>
-                <span>{formData.amount} {formData.currency}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Network Fee</span>
-                <span>{getCurrentFee()} {formData.currency}</span>
-              </div>
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-                  <span>You'll Receive</span>
-                  <span style={{ color: '#F0B90B' }}>{getReceiveAmount().toFixed(4)} {formData.currency}</span>
-                </div>
-              </div>
-            </Space>
-          </Card>
-        )}
 
-        {/* Withdraw Button */}
-        <Button
-          block
-          color="warning"
-          size="large"
-          onClick={() => setShowConfirmModal(true)}
-          disabled={!formData.address || !formData.amount || parseFloat(formData.amount) <= 0}
-          style={{ marginBottom: '16px' }}
-        >
-          Withdraw
-        </Button>
+       {/* Transaction Summary */}
+{formData.amount && (
+  <Card title="Transaction Summary" className="mb-4">
+    <div className="flex flex-col gap-2 w-full">
+      <div className="flex justify-between">
+        <span>Amount</span>
+        <span>
+          {formData.amount} {formData.currency}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span>Network Fee</span>
+        <span>
+          {getCurrentFee()} {formData.currency}
+        </span>
+      </div>
+
+      <div className="border-t border-gray-200 pt-2">
+        <div className="flex justify-between font-bold">
+          <span>You&apos;ll Receive</span>
+          <span className="text-[#F0B90B]">
+            {getReceiveAmount().toFixed(4)} {formData.currency}
+          </span>
+        </div>
+      </div>
+    </div>
+  </Card>
+)}
+
+
+         {/* Withdraw Button */}
+<Button
+  block
+  color="warning"
+  size="large"
+  onClick={() => setShowConfirmModal(true)}
+  disabled={
+    !formData.address || !formData.amount || parseFloat(formData.amount) <= 0
+  }
+  className="mb-4"
+>
+  Withdraw
+</Button>
 
           {/* Security Notice */}
-          <Card title="Security Tips" style={{ marginBottom: '16px' }}>
-            <Space direction="vertical" style={{ width: '100%', fontSize: '14px' }}>
-              <div>• Double-check the withdrawal address</div>
-              <div>• Ensure the network matches your destination wallet</div>
-              <div>• Withdrawals are irreversible once confirmed</div>
-            </Space>
-          </Card>
+<Card title="Security Tips" className="mb-4">
+  <div className="flex flex-col gap-1 text-sm w-full">
+    <div>• Double-check the withdrawal address</div>
+    <div>• Ensure the network matches your destination wallet</div>
+    <div>• Withdrawals are irreversible once confirmed</div>
+  </div>
+</Card>
         </div>
       </div>
 
-      {/* Currency ActionSheet */}
-      <ActionSheet
-        visible={showCurrencySheet}
-        actions={coins.map(coin => ({
-          key: coin.symbol,
-          text: (
-            <div style={{ textAlign: 'left', width: '100%', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img 
-                src={coin.logoUrl || ''} 
-                alt={coin.symbol}
-                style={{ width: '32px', height: '32px', borderRadius: '50%' }}
-              />
-              <div>
-                <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{coin.symbol}</div>
-                <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-                  Balance: {getAvailableBalance(coin.symbol).toFixed(8)} (~${getUsdValue(coin.symbol, getAvailableBalance(coin.symbol))})
-                </div>
-              </div>
-            </div>
-          ),
-          onClick: () => {
-            handleInputChange('currency', coin.symbol);
-            setShowCurrencySheet(false);
-          }
-        }))}
-        onClose={() => setShowCurrencySheet(false)}
-        cancelText="Cancel"
-      />
 
-      {/* Network ActionSheet */}
-      <ActionSheet
-        visible={showNetworkSheet}
-        actions={getAvailableNetworks(formData.currency).map(networkConfig => {
-          const feeKey = `${formData.currency}-${networkConfig.network}`;
-          const networkFee = networkFees[feeKey] || 0;
-          return {
-            key: networkConfig.network,
-            text: (
-              <div style={{ textAlign: 'left', width: '100%', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <img 
-                  src={getNetworkLogo(networkConfig.network)} 
-                  alt={networkConfig.network}
-                  style={{ width: '24px', height: '24px', borderRadius: '50%' }}
-                />
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{networkConfig.network.toUpperCase()}</div>
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-                    Network Fee: {networkFee} {formData.currency}
-                  </div>
-                </div>
-              </div>
-            ),
-            onClick: () => {
-              handleInputChange('network', networkConfig.network);
-              setShowNetworkSheet(false);
-            }
-          };
-        })}
-        onClose={() => setShowNetworkSheet(false)}
-        cancelText="Cancel"
-      />
+
+     {/* Network ActionSheet */}
+<ActionSheet
+  visible={showNetworkSheet}
+  actions={getAvailableNetworks(formData.currency).map((networkConfig) => {
+    const feeKey = `${formData.currency}-${networkConfig.network}`;
+    const networkFee = networkFees[feeKey] || 0;
+
+    return {
+      key: networkConfig.network,
+      text: (
+        <div className="w-full flex items-center gap-3 text-left">
+          <img
+            src={getNetworkLogo(networkConfig.network)}
+            alt={networkConfig.network}
+            className="w-6 h-6 rounded-full"
+          />
+          <div>
+            <div className="font-bold text-base">
+              {networkConfig.network.toUpperCase()}
+            </div>
+            <div className="text-xs text-gray-600 mt-0.5">
+              Network Fee: {networkFee} {formData.currency}
+            </div>
+          </div>
+        </div>
+      ),
+      onClick: () => {
+        handleInputChange('network', networkConfig.network);
+        setShowNetworkSheet(false);
+      },
+    };
+  })}
+  onClose={() => setShowNetworkSheet(false)}
+  cancelText="Cancel"
+/>
+
 
       {/* Confirmation ActionSheet */}
       <ConfirmationActionSheet
@@ -633,8 +625,15 @@ export default function WithdrawTab() {
       <RecentWithdrawals
         isOpen={showRecentWithdrawals}
         onClose={() => setShowRecentWithdrawals(false)}
-       telegramId='123456789'
+        
       />
+    {/*   <InviteFriendsEarn isOpen={true} onClose={() =>  console.log('close')} /> */}
+    {/*  <NewWithdrawal isOpen={true} onClose={() => console.log('close')} /> */}
+    {/*  <NewProfile isOpen={true} onClose={() => console.log('close')} /> */}
+
+    {/* <NewEarn isOpen={true} onClose={() => console.log('close')}  /> */}
+    <NewHome  isOpen={true} onClose={() => console.log('close')} 
+/>
     </div>
   );
 }

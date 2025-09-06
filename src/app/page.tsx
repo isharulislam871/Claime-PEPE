@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import UserStatusHandler from '@/components/UserStatusHandler';
 import AppInitializer from '@/components/AppInitializer';
 import VpnManager from '@/components/VpnManager';
-import TabManager from '@/components/TabManager';
+ 
 import AdsScriptLoader from '@/components/AdsScriptLoader';
 import { getCurrentUser } from '@/lib/api';
 import { useDispatch } from 'react-redux';
 import { createUserRequest } from '@/modules';
+import NewHome from '@/components/NewHome';
 
 interface AdsSettings {
   enableGigaPubAds: boolean;
@@ -72,8 +73,7 @@ export default function Home() {
             setVpnDetected={setVpnDetected}
           /> */}
 
-          {/* Main tab interface */}
-          <TabManager />
+          <NewHome   />
         </div>
       </UserStatusHandler>
     </>

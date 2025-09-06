@@ -11,9 +11,8 @@ import {
   FetchWithdrawalsFailurePayload
 } from './types';
 
-export const fetchWithdrawals = (telegramId: string) => ({
+export const fetchWithdrawals = ( ) => ({
   type: WITHDRAWALS_FETCH_REQUEST,
-  payload: { telegramId }
 });
 
 export const fetchWithdrawalsSuccess = (withdrawals: FetchWithdrawalsSuccessPayload['withdrawals']) => ({

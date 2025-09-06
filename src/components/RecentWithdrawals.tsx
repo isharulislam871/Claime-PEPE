@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { Dispatch, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   Popup,
@@ -19,7 +19,6 @@ import {
   UpCircleOutline
 } from 'antd-mobile-icons';
  
-import { AppDispatch } from '@/modules/store';
 import { 
   selectRecentWithdrawals,
   selectWithdrawalsLoading,
@@ -33,22 +32,22 @@ import {
 import { CopyFilled } from '@ant-design/icons';
 
 interface RecentWithdrawalsProps {
-  telegramId: string;
+  
   isOpen : any;
   onClose : any;
 }
 
-export default function RecentWithdrawals({ telegramId , isOpen , onClose }: RecentWithdrawalsProps) {
-  const dispatch = useDispatch<AppDispatch>();
+export default function RecentWithdrawals({  isOpen , onClose }: RecentWithdrawalsProps) {
+  const dispatch = useDispatch();
   const withdrawalHistory = useSelector(selectRecentWithdrawals);
   const loading = useSelector(selectWithdrawalsLoading);
   const error = useSelector(selectWithdrawalsError);
  
   useEffect(() => {
-    if (isOpen && telegramId) {
-      dispatch(fetchWithdrawals(telegramId));
-    }
-  }, [isOpen, telegramId, dispatch]);
+    
+      dispatch(fetchWithdrawals());
+   
+  }, [isOpen, dispatch]);
 
   const handleClose = () => {
     dispatch(setRecentWithdrawalsOpen(false));
@@ -100,7 +99,7 @@ export default function RecentWithdrawals({ telegramId , isOpen , onClose }: Rec
       visible={isOpen}
       onMaskClick={onClose}
       position='bottom'
-      bodyStyle={{ height: '90vh', backgroundColor: '#f8fafc' }}
+      bodyStyle={{ height: '100vh', backgroundColor: '#f8fafc' }}
     >
       <div className="flex flex-col h-full bg-gray-50">
         {/* Binance-style Header */}
@@ -143,7 +142,7 @@ export default function RecentWithdrawals({ telegramId , isOpen , onClose }: Rec
               <Button 
                 color='primary' 
                 size='large'
-                onClick={() => { dispatch(fetchWithdrawals(telegramId)); }}
+                onClick={() => { dispatch(fetchWithdrawals()); }}
                 className="!rounded-lg"
               >
                 Try Again

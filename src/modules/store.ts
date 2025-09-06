@@ -13,6 +13,7 @@ import { rootSaga } from './rootSaga';
 import { authReducer } from './public';
 import { userReducer, withdrawalsReducer } from './private';
 import { taskReducer } from './private/task';
+import { coinReducer } from './private/coin';
 
 // Create saga middleware
 const sagaMiddleware = createSagaMiddleware();
@@ -22,6 +23,7 @@ const privateReducers = combineReducers({
   user: userReducer,
   withdrawals: withdrawalsReducer,
   task: taskReducer,
+  coin: coinReducer,
 });
 
 // Combine public reducers

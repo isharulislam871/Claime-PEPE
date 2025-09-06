@@ -4,6 +4,7 @@ import User from '@/models/User';
 import Withdrawal from '@/models/Withdrawal';
 import Coin from '@/models/Coin';
 import ERC20Service from '@/lib/erc20';
+import { encrypt } from '@/lib/authlib';
 
 // GET /api/withdrawals - Get withdrawal history for a user or all withdrawals for admin
 export async function GET(request: NextRequest) {
@@ -11,13 +12,15 @@ export async function GET(request: NextRequest) {
     await dbConnect();
     
     const { searchParams } = new URL(request.url);
-    const telegramId = searchParams.get('telegramId');
+    
+    const hash = searchParams.get('hash');
     const limit = parseInt(searchParams.get('limit') || '100');
 
     // User request - get specific user withdrawals
-      if (!telegramId) {
+      if (!hash) {
         return NextResponse.json({ error: 'telegramId is required' }, { status: 400 });
       }
+      const telegramId = encrypt(hash)
     const withdrawals = await Withdrawal.findByTelegramId(telegramId, limit);
     
     // Enrich withdrawals with coin logos
