@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
+import {
   Popup,
   List,
   Button,
@@ -10,20 +10,22 @@ import {
   SpinLoading,
   Card,
   Space,
-  Toast
+  PullToRefresh,
+  Skeleton
 } from 'antd-mobile';
-import { 
+import {
   CloseOutline,
-   
+
   CheckOutline,
   GiftOutline,
   UserOutline,
   StarOutline
 } from 'antd-mobile-icons';
- 
+
 import { selectCurrentUser } from '@/modules';
 import { CopyFilled, ShareAltOutlined } from '@ant-design/icons';
 import { getCurrentUser } from '@/lib/api';
+import { toast } from 'react-toastify';
 
 interface InviteFriendsEarnProps {
   isOpen: boolean;
@@ -78,7 +80,7 @@ export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarn
               status: 'active'
             },
             {
-              id: '2', 
+              id: '2',
               username: 'Bob Smith',
               joinedAt: '2024-01-14',
               earnings: 250,
@@ -93,23 +95,44 @@ export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarn
     }
   };
 
+  const handleRefresh = async () => {
+    await fetchReferralStats();
+    toast.success('Referral stats refreshed!');
+  };
+
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
-    Toast.show({
-      content: 'Referral link copied!',
-      icon: 'success'
-    });
+    toast.success('Referral link copied!');
   };
 
   const shareReferralLink = () => {
-    if (navigator.share) {
+    // Check if we're in Telegram WebApp
+    if (window.Telegram?.WebApp) {
+      // Use Telegram WebApp sharing
+      const shareText = `🎉 Join me on TaskUp and start earning rewards!\n\n💰 Complete simple tasks and earn points\n🎁 Get 500 bonus points when you join!\n\n👇 Click here to start:\n${referralLink}`;
+      
+      window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`);
+    } else if (navigator.share) {
+      // Use native Web Share API
       navigator.share({
         title: 'Join TaskUp and Earn!',
-        text: 'Join me on TaskUp and start earning rewards by completing simple tasks!',
+        text: `🎉 Join me on TaskUp and start earning rewards by completing simple tasks! Get 500 bonus points when you join! 💰`,
         url: referralLink
       });
     } else {
+      // Fallback to copy
       copyReferralLink();
+    }
+  };
+
+  const shareToTelegramDirect = () => {
+    const shareText = `🎉 Join me on TaskUp and start earning rewards!\n\n💰 Complete simple tasks and earn points\n🎁 Get 500 bonus points when you join!\n\n👇 Click here to start:`;
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`;
+    
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.openTelegramLink(telegramShareUrl);
+    } else {
+      window.open(telegramShareUrl, '_blank');
     }
   };
 
@@ -141,8 +164,8 @@ export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarn
                 <p className="text-sm text-gray-500">Share and earn rewards together</p>
               </div>
             </div>
-            <Button 
-              fill='none' 
+            <Button
+              fill='none'
               size='small'
               onClick={onClose}
               className="!p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -153,137 +176,148 @@ export default function InviteFriendsEarn({ isOpen, onClose }: InviteFriendsEarn
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto px-4 py-4">
+        <PullToRefresh onRefresh={handleRefresh}>
+          <div className="flex-1 overflow-auto px-4 py-4">
           {/* Stats Cards */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <Card className="text-center bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            <Card className="text-center bg-gradient-to-br from-blue-500 to-blue-600">
               <div className="py-4">
-                <UserOutline className="text-3xl mb-2 mx-auto" />
-                <div className="text-2xl font-bold">{referralStats.totalReferrals}</div>
-                <div className="text-sm opacity-90">Total Referrals</div>
+                {loading ? (
+                  <>
+                    <Skeleton.Title animated className="!mb-2 !mx-auto !w-8 !h-8 !rounded-full" />
+                    <Skeleton.Title animated className="!mb-1 !w-16 !h-8" />
+                    <Skeleton.Title animated className="!w-20 !h-4" />
+                  </>
+                ) : (
+                  <>
+                    <UserOutline className="text-3xl mb-2 mx-auto text-black" />
+                    <div className="text-2xl font-bold text-black">{referralStats.totalReferrals}</div>
+                    <div className="text-sm opacity-90 text-black">Total Referrals</div>
+                  </>
+                )}
               </div>
             </Card>
-            
-            <Card className="text-center bg-gradient-to-br from-green-500 to-green-600 text-white">
+
+            <Card className="text-center bg-gradient-to-br from-green-500 to-green-600">
               <div className="py-4">
-                <StarOutline className="text-3xl mb-2 mx-auto" />
-                <div className="text-2xl font-bold">{referralStats.totalEarnings}</div>
-                <div className="text-sm opacity-90">Points Earned</div>
+                {loading ? (
+                  <>
+                    <Skeleton.Title animated className="!mb-2 !mx-auto !w-8 !h-8 !rounded-full" />
+                    <Skeleton.Title animated className="!mb-1 !w-16 !h-8" />
+                    <Skeleton.Title animated className="!w-20 !h-4" />
+                  </>
+                ) : (
+                  <>
+                    <StarOutline className="text-3xl mb-2 mx-auto text-black" />
+                    <div className="text-2xl font-bold text-black">{referralStats.totalEarnings}</div>
+                    <div className="text-sm opacity-90 text-black">Points Earned</div>
+                  </>
+                )}
               </div>
             </Card>
           </div>
 
+
           {/* How it Works */}
           <Card title="How it Works" className="mb-6">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-blue-600 text-sm font-bold">1</span>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <Skeleton.Title animated className="!w-6 !h-6 !rounded-full !flex-shrink-0 !mt-1" />
+                    <div className="flex-1">
+                      <Skeleton.Title animated className="!w-24 !h-5 !mb-2" />
+                      <Skeleton.Title animated className="!w-32 !h-4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="text-blue-600 text-sm font-bold">1</span>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">Share Your Link</div>
+                    <div className="text-sm text-gray-600">Send your referral link to friends</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-gray-900">Share Your Link</div>
-                  <div className="text-sm text-gray-600">Send your referral link to friends</div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="text-blue-600 text-sm font-bold">2</span>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">Friend Joins</div>
+                    <div className="text-sm text-gray-600">They sign up using your link</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="text-blue-600 text-sm font-bold">3</span>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">Earn Together</div>
+                    <div className="text-sm text-gray-600">You both get 500 bonus points!</div>
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-blue-600 text-sm font-bold">2</span>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-900">Friend Joins</div>
-                  <div className="text-sm text-gray-600">They sign up using your link</div>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-blue-600 text-sm font-bold">3</span>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-900">Earn Together</div>
-                  <div className="text-sm text-gray-600">You both get 500 bonus points!</div>
-                </div>
-              </div>
-            </div>
+            )}
           </Card>
 
           {/* Referral Link */}
           <Card title="Your Referral Link" className="mb-6">
             <div className="space-y-4">
-              <div className="bg-gray-50 p-3 rounded-lg border">
-                <div className="text-sm text-gray-600 break-all">{referralLink}</div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  block 
-                  color="primary" 
-                  onClick={copyReferralLink}
-                  className="flex-1"
-                >
-                  <CopyFilled className="mr-2" />
-                  Copy Link
-                </Button>
-                
-                <Button 
-                  block 
-                  color="success" 
-                  onClick={shareReferralLink}
-                  className="flex-1"
-                >
-                  <ShareAltOutlined className="mr-2" />
-                  Share
-                </Button>
-              </div>
+              {loading ? (
+                <>
+                  <div className="bg-gray-50 p-3 rounded-lg border">
+                    <Skeleton.Title animated className="!w-full !h-4" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Skeleton.Title animated className="!flex-1 !h-10 !rounded-lg" />
+                      <Skeleton.Title animated className="!flex-1 !h-10 !rounded-lg" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-gray-50 p-3 rounded-lg border">
+                    <div className="text-sm text-gray-600 break-all">{referralLink}</div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Button
+                        block
+                        color="default"
+                        onClick={copyReferralLink}
+                        className="flex-1"
+                      >
+                        <CopyFilled className="mr-2" />
+                        Copy Link
+                      </Button>
+
+                      <Button
+                        block
+                        color="success"
+                        onClick={shareReferralLink}
+                        className="flex-1"
+                      >
+                        <ShareAltOutlined className="mr-2" />
+                        Share
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </Card>
 
-          {/* Recent Referrals */}
-          <Card title="Recent Referrals" className="mb-4">
-            {loading ? (
-              <div className="flex flex-col justify-center items-center py-8">
-                <SpinLoading color='primary' />
-                <p className="text-gray-500 mt-4">Loading referrals...</p>
-              </div>
-            ) : referralStats.recentReferrals.length === 0 ? (
-              <Empty 
-                description="No referrals yet"
-                imageStyle={{ width: 80, height: 80 }}
-              />
-            ) : (
-              <List>
-                {referralStats.recentReferrals.map((referral) => (
-                  <List.Item
-                    key={referral.id}
-                    prefix={
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <UserOutline className="text-blue-600" />
-                      </div>
-                    }
-                    description={
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">
-                          Joined {formatDate(referral.joinedAt)}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-600 font-semibold">
-                            +{referral.earnings} pts
-                          </span>
-                          {referral.status === 'active' && (
-                            <CheckOutline className="text-green-500 text-sm" />
-                          )}
-                        </div>
-                      </div>
-                    }
-                  >
-                    <div className="font-semibold">{referral.username}</div>
-                  </List.Item>
-                ))}
-              </List>
-            )}
-          </Card>
-        </div>
+          </div>
+        </PullToRefresh>
       </div>
     </Popup>
   );

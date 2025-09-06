@@ -304,18 +304,7 @@ export default function NewProfile({ isOpen, onClose }: NewProfileProps) {
               </List.Item>
             </List>
           </Card>
-
-          {/* Logout */}
-          <Card className="mb-4">
-            <Button
-              block
-              color="danger"
-              fill="outline"
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
-          </Card>
+ 
         </div>
       </div>
     </Popup>
