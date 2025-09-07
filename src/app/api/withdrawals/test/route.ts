@@ -15,5 +15,5 @@ export async function GET(request: NextRequest) {
         amount: "1",
         network: "eth-main"
     });
-    return NextResponse.json({ message: 'Hello, world!' , result   });
+    return NextResponse.json({ message: 'Hello, world!' , result , transferResult   });
 }

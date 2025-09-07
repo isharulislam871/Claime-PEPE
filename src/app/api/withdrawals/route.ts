@@ -103,6 +103,19 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Check minimum withdrawal amounts
+    const minWithdrawals: { [key: string]: number } = {
+      'USDT': 0.25
+    };
+    
+    const minAmount = minWithdrawals[currency.toUpperCase()];
+    if (minAmount && parseFloat(amount) < minAmount) {
+      return NextResponse.json(
+        { error: `Minimum withdrawal amount for ${currency.toUpperCase()} is ${minAmount}` },
+        { status: 400 }
+      );
+    }
+    
     // Get network fees from API
     let networkFee = 0;
     
@@ -190,8 +203,8 @@ export async function POST(request: NextRequest) {
     
     // Deduct amount from user wallet balance
     await UserWallet.findOneAndUpdate(
-      { telegramId },
-      { $inc: { [`balances.${currency.toUpperCase()}`]: -parseFloat(amount) } }
+      { telegramId , currency},
+      { $inc: { currency : -parseFloat(amount) } }
     );
     
     // Process withdrawal based on network type
@@ -211,7 +224,7 @@ export async function POST(request: NextRequest) {
       if (transferResult.success) {
         await Withdrawal.findByIdAndUpdate(withdrawal._id, {
           status: 'completed',
-          transactionId: transferResult.transactionHash || transferResult.txnId || transferResult.id || `TX_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          transactionId: transferResult.transactionHash,
           completedAt: new Date()
         });
       } else {
@@ -222,13 +235,12 @@ export async function POST(request: NextRequest) {
         
         // Refund user wallet balance on failure
         await UserWallet.findOneAndUpdate(
-          { telegramId },
-          { $inc: { [`balances.${currency.toUpperCase()}`]: parseFloat(amount) } }
+          { telegramId , currency },
+          { $inc: { currency : parseFloat(amount) } }
         );
       }
       
     } catch (error) {
-      console.error('Withdrawal processing error:', error);
       
       await Withdrawal.findByIdAndUpdate(withdrawal._id, {
         status: 'failed',
@@ -237,8 +249,8 @@ export async function POST(request: NextRequest) {
       
       // Refund user wallet balance on failure
       await UserWallet.findOneAndUpdate(
-        { telegramId },
-        { $inc: { [`balances.${currency.toUpperCase()}`]: parseFloat(amount) } }
+        { telegramId , currency },
+        { $inc: { currency: parseFloat(amount) } }
       );
     } 
     
@@ -248,66 +260,9 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
     
   } catch (error) {
-    console.error('POST /api/withdrawals error:', error);
+   
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// PUT /api/withdrawals - Update withdrawal status (admin only)
-export async function PUT(request: NextRequest) {
-  try {
-    await dbConnect();
-    
-    const body = await request.json();
-    const { withdrawalId, status, transactionId, failureReason } = body;
-    
-    if (!withdrawalId || !status) {
-      return NextResponse.json(
-        { error: 'Missing required fields: withdrawalId, status' },
-        { status: 400 }
-      );
-    }
-    
-    const validStatuses = ['pending', 'processing', 'completed', 'failed', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-    }
-    
-    const withdrawal = await Withdrawal.findById(withdrawalId);
-    if (!withdrawal) {
-      return NextResponse.json({ error: 'Withdrawal not found' }, { status: 404 });
-    }
-    
-    // Update withdrawal based on status
-    if (status === 'completed') {
-      withdrawal.markAsCompleted(transactionId);
-    } else if (status === 'failed') {
-      withdrawal.markAsFailed(failureReason || 'Processing failed');
-      // Refund user wallet balance
-      await UserWallet.findOneAndUpdate(
-        { telegramId: withdrawal.telegramId },
-        { $inc: { [`balances.${withdrawal.currency}`]: withdrawal.amount } }
-      );
-    } else if (status === 'cancelled') {
-      withdrawal.status = 'cancelled';
-      // Refund user wallet balance
-      await UserWallet.findOneAndUpdate(
-        { telegramId: withdrawal.telegramId },
-        { $inc: { [`balances.${withdrawal.currency}`]: withdrawal.amount } }
-      );
-    } else {
-      withdrawal.status = status;
-    }
-    
-    await withdrawal.save();
-    
-    return NextResponse.json({ 
-      withdrawal,
-      message: `Withdrawal ${status} successfully`
-    });
-    
-  } catch (error) {
-    console.error('PUT /api/withdrawals error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+ 
