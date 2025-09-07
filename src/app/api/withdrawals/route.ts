@@ -6,6 +6,7 @@ import Withdrawal from '@/models/Withdrawal';
 import Coin from '@/models/Coin';
 import ERC20Service from '@/lib/erc20';
 import { decrypt, encrypt } from '@/lib/authlib';
+import { ethers } from 'ethers';
 
 // GET /api/withdrawals - Get withdrawal history for a user or all withdrawals for admin
 export async function GET(request: NextRequest) {
@@ -118,11 +119,27 @@ export async function POST(request: NextRequest) {
         { error: `Insufficient ${currency.toUpperCase()} balance. Available: ${walletBalance}, Required: ${requiredBalance}` },
         { status: 400 }
       );
+      
     }
+
+
+    if(address){
+     const isValidAddress = ethers.isAddress(address)
+       
+      if (!isValidAddress) {
+        return NextResponse.json(
+          { error: `Invalid address format. Address: ${address}` },
+          { status: 400 }
+        );
+      }
+
+    }
+      
+    
 
     const contractAddress = coin.networks.find((n : any)=> n.network === network && n.isActive)?.contractAddress;
 
-    
+ 
 
     // Estimate gas for the transfer
     const gasEstimate = await ERC20Service.estimateGas({
