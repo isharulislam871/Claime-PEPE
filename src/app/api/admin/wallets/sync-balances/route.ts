@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Wallet from '@/models/Wallet';
+import Coin from '@/models/Coin';
 import EthereumService from '@/lib/ethereum';
 import ERC20Service from '@/lib/erc20';
 import { getServerSession } from "next-auth";
@@ -21,37 +22,66 @@ export async function GET(request: NextRequest) {
     // Get all active wallets
     const wallets = await Wallet.find({ status: 'active' });
     
- 
+    // Get all active coins with their network configurations
+    const coins = await Coin.find({ isActive: true });
 
     const results = [];
-    const tokenAddresses = {
-      mainnet: {
-        USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-        USDC: '0xA0b86a33E6441e8e3F3570c5c1c0b9C0e3e0e0e0',
-        PEPE: '0x6982508145454Ce325dDbE47a25d4ec3d2311933',
-        SHIB: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'
-      },
-      bsc: {
-        USDT: '0x55d398326f99059fF775485246999027B3197955',
-        USDC: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
-        PEPE: '0x25d887ce7a35172c62febfd67a1856f20faebb00'
-      }
-    };
 
     // Sync balances for each wallet
     for (const wallet of wallets) {
       try {
         let realBalance = '0';
 
-        if (wallet.currency === 'ETH' || wallet.currency === 'BNB') {
-          realBalance = await EthereumService.getBalance(wallet.address, wallet.network);
-        } else {
-          const networkTokens = tokenAddresses[ wallet.network as keyof typeof tokenAddresses];
-          const tokenAddress = networkTokens?.[wallet.currency as keyof typeof networkTokens];
+        // Find the coin configuration for this wallet's currency
+        const coin = coins.find(c => c.symbol === wallet.currency);
+        
+        if (!coin) {
+          results.push({
+            walletId: wallet._id,
+            address: wallet.address,
+            currency: wallet.currency,
+            success: false,
+            error: `Coin configuration not found for ${wallet.currency}`
+          });
+          continue;
+        }
 
-          if (tokenAddress) {
-            realBalance = await ERC20Service.getBalance(tokenAddress, wallet.address,  wallet.network);
-          }
+        // Find the network configuration for this wallet's network
+        const networkConfig = coin.networks.find((n: any) => 
+          n.network === wallet.network && n.isActive
+        );
+
+        if (!networkConfig) {
+          results.push({
+            walletId: wallet._id,
+            address: wallet.address,
+            currency: wallet.currency,
+            success: false,
+            error: `Network configuration not found for ${wallet.currency} on ${wallet.network}`
+          });
+          continue;
+        }
+
+        // Get balance based on whether it's a native token or ERC20
+        if (networkConfig.isNative) {
+          // Native token (ETH, BNB)
+          realBalance = await EthereumService.getBalance(wallet.address, wallet.network);
+        } else if (networkConfig.contractAddress) {
+          // ERC20 token
+          realBalance = await ERC20Service.getBalance(
+            networkConfig.contractAddress, 
+            wallet.address, 
+            wallet.network
+          );
+        } else {
+          results.push({
+            walletId: wallet._id,
+            address: wallet.address,
+            currency: wallet.currency,
+            success: false,
+            error: `No contract address found for ${wallet.currency} on ${wallet.network}`
+          });
+          continue;
         }
 
         const numericBalance = parseFloat(realBalance);
