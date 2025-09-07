@@ -96,20 +96,7 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
  
 
   const swapOptions: SwapOption[] = [
-    {
-      label: 'Bitcoin (BTC)',
-      value: 'btc',
-      rate: 0.0000000006, // Approximate rate
-      icon: getCoinIcon('btc'),
-      description: '~1.67M pts = 0.001 BTC'
-    },
-    {
-      label: 'Ethereum (ETH)',
-      value: 'eth',
-      rate: 0.000000015, // Approximate rate
-      icon: getCoinIcon('eth'),
-      description: '~66.7K pts = 0.001 ETH'
-    },
+     
     {
       label: 'USDT',
       value: 'usdt',
@@ -120,9 +107,16 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
     {
       label: 'BNB',
       value: 'bnb',
-      rate: 0.0000018, // Approximate rate
+      rate: 0.0000000287, // Approximate rate
       icon: getCoinIcon('bnb'),
-      description: '~555 pts = 0.001 BNB'
+      description: '~34.8M pts = 1 BNB'
+    },
+    {
+      label: 'Pepe (PEPE)',
+      value: 'pepe',
+      rate: 2.56, // Example rate, adjust based on market
+      icon: getCoinIcon('pepe'),
+      description: '~10,000 pts ≈ 25,600 PEPE (~$0.25)'
     }
   ];
   
