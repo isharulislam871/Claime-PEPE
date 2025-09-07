@@ -522,7 +522,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
         onClose={() => setShowConfirmation(false)}
         onConfirm={handleConfirmWithdrawal}
         currency={formData.currency}
-        network={getNetworkName(formData.network)}
+        network={formData.network}
         amount={formData.amount}
         address={formData.address}
         networkIcon={getNetworkIcon(formData.network)}
@@ -533,7 +533,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
       <WithdrawalProgressPopup
         visible={showProgress}
         currency={formData.currency}
-        network={getNetworkName(formData.network)}
+        network={ formData.network}
         amount={formData.amount}
         address={formData.address}
         networkIcon={getNetworkIcon(formData.network)}
@@ -547,7 +547,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
         onRetry={handleRetryWithdrawal}
      
         currency={formData.currency}
-        network={getNetworkName(formData.network)}
+        network={formData.network}
         amount={formData.amount}
         address={formData.address}
         networkIcon={getNetworkIcon(formData.network)}
@@ -557,16 +557,5 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
     </Popup>
   );
 
-  function getNetworkName(networkId: string): string {
-    const networks: Record<string, string> = {
-      'trc20': 'TRON (TRC20)',
-      'erc20': 'Ethereum (ERC20)',
-      'bep20': 'BSC (BEP20)',
-      'polygon': 'Polygon (MATIC)',
-      'bitcoin': 'Bitcoin Network',
-      'ethereum': 'Ethereum Network',
-      'arbitrum': 'Arbitrum One'
-    };
-    return networks[networkId] || networkId;
-  }
+ 
 }
