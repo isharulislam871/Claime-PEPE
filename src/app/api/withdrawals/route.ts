@@ -8,6 +8,9 @@ import ERC20Service from '@/lib/erc20';
 import { decrypt, encrypt } from '@/lib/authlib';
 import { ethers } from 'ethers';
 
+// Define supported network types to match ERC20Service
+type SupportedNetwork = 'eth-main' | 'sepolia' | 'bsc-mainnet' | 'bsc-testnet';
+
 // GET /api/withdrawals - Get withdrawal history for a user or all withdrawals for admin
 export async function GET(request: NextRequest) {
   try {
@@ -67,6 +70,14 @@ export async function POST(request: NextRequest) {
     
     const telegramId = decrypt(hash)
     
+    // Validate network type first
+    const supportedNetworks: SupportedNetwork[] = ['eth-main', 'sepolia', 'bsc-mainnet', 'bsc-testnet'];
+    if (!supportedNetworks.includes(network as SupportedNetwork)) {
+      return NextResponse.json(
+        { error: `Network ${network} is not supported. Supported networks: ${supportedNetworks.join(', ')}` },
+        { status: 400 }
+      );
+    }
     
     // Validate currency and network combinations using Coin model
     const coin = await Coin.findOne({ 

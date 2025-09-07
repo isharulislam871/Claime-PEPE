@@ -76,8 +76,8 @@ const WalletSchema: Schema = new Schema({
   network: {
     type: String,
     required: true,
-    enum: ['mainnet', 'bsc', 'bsc-testnet'],
-    default: 'mainnet'
+       enum: ['eth-main', 'sepolia', 'bsc-mainnet', 'bsc-testnet'],
+    default: 'bsc-mainnet'
   },
   lastTransaction: {
     type: Date,

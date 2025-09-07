@@ -127,7 +127,7 @@ export default function CoinsPage() {
     setEditingCoin(null);
     form.resetFields();
     form.setFieldsValue({
-      networks: [{ network: 'bsc', isNative: false, isActive: true }],
+      networks: [{ network: 'bsc-mainnet', isNative: false, isActive: true }],
       decimals: 18,
       isActive: true
     });
@@ -203,10 +203,9 @@ export default function CoinsPage() {
 
   const getNetworkColor = (network: string) => {
     const colors: { [key: string]: string } = {
-      'bsc': 'gold',
-      'ethereum': 'blue',
-      'polygon': 'purple',
-      'mainnet': 'green',
+      'bsc-mainnet': 'gold',
+      'eth-main': 'blue',
+      'sepolia': 'green',
       'bsc-testnet': 'orange'
     };
     return colors[network] || 'default';
@@ -375,13 +374,13 @@ export default function CoinsPage() {
             <Select
               value={selectedNetwork}
               onChange={setSelectedNetwork}
-              style={{ width: 120 }}
+              style={{ width: 140 }}
             >
               <Option value="all">All Networks</Option>
-              <Option value="bsc">BSC</Option>
-              <Option value="ethereum">Ethereum</Option>
-              <Option value="polygon">Polygon</Option>
-              <Option value="mainnet">Mainnet</Option>
+              <Option value="bsc-mainnet">BSC Mainnet</Option>
+              <Option value="eth-main">Ethereum</Option>
+              <Option value="sepolia">Sepolia</Option>
+              <Option value="bsc-testnet">BSC Testnet</Option>
             </Select>
             <Button 
               icon={<ReloadOutlined />} 
@@ -573,10 +572,9 @@ export default function CoinsPage() {
                             rules={[{ required: true, message: 'Select network' }]}
                           >
                             <Select placeholder="Network">
-                              <Option value="bsc">BSC</Option>
-                              <Option value="ethereum">Ethereum</Option>
-                              <Option value="polygon">Polygon</Option>
-                              <Option value="mainnet">Mainnet</Option>
+                              <Option value="bsc-mainnet">BSC Mainnet</Option>
+                              <Option value="eth-main">Ethereum</Option>
+                              <Option value="sepolia">Sepolia</Option>
                               <Option value="bsc-testnet">BSC Testnet</Option>
                             </Select>
                           </Form.Item>
@@ -621,7 +619,7 @@ export default function CoinsPage() {
                   ))}
                   <Button
                     type="dashed"
-                    onClick={() => add({ network: 'bsc', isNative: false, isActive: true })}
+                    onClick={() => add({ network: 'bsc-mainnet', isNative: false, isActive: true })}
                     block
                     icon={<PlusOutlined />}
                   >

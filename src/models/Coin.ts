@@ -24,12 +24,13 @@ const NetworkConfigSchema = new mongoose.Schema({
   network: {
     type: String,
     required: true,
-    enum: ['mainnet', 'bsc', 'bsc-testnet', 'polygon', 'ethereum']
+    enum: ['eth-main', 'sepolia', 'bsc-mainnet', 'bsc-testnet'],
+
   },
   contractAddress: {
     type: String,
     validate: {
-      validator: function(v: string) {
+      validator: function (v: string) {
         // Allow empty for native tokens, validate format for contract addresses
         return !v || /^0x[a-fA-F0-9]{40}$/.test(v);
       },
@@ -69,7 +70,7 @@ const CoinSchema = new mongoose.Schema({
   logoUrl: {
     type: String,
     validate: {
-      validator: function(v: string) {
+      validator: function (v: string) {
         return !v || /^https?:\/\/.+/.test(v);
       },
       message: 'Invalid logo URL format'
@@ -82,7 +83,7 @@ const CoinSchema = new mongoose.Schema({
   website: {
     type: String,
     validate: {
-      validator: function(v: string) {
+      validator: function (v: string) {
         return !v || /^https?:\/\/.+/.test(v);
       },
       message: 'Invalid website URL format'
@@ -100,8 +101,5 @@ const CoinSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index for symbol uniqueness
-CoinSchema.index({ symbol: 1 }, { unique: true });
-CoinSchema.index({ 'networks.network': 1, 'networks.contractAddress': 1 });
 
 export default mongoose.models.Coin || mongoose.model<ICoin>('Coin', CoinSchema);

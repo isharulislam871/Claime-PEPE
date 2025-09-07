@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import mongoose from 'mongoose';
+ 
 import RpcNode from '@/models/RpcNode';
 import Wallet from '@/models/Wallet';
 import connectDB from '@/lib/mongodb';
@@ -17,7 +17,7 @@ interface ERC20TransferParams {
   tokenAddress: string;
   toAddress: string;
   amount: string;
-  network?: 'mainnet' | 'sepolia' | 'bsc' | 'bsc-testnet';
+  network?: 'eth-main' | 'sepolia' | 'bsc-mainnet' | 'bsc-testnet';
   gasLimit?: string;
   gasPrice?: string;
 }
@@ -45,7 +45,7 @@ class ERC20Service {
     // Wallet will be initialized dynamically from database
   }
 
-  private async initializeWallet(network: string = 'mainnet') {
+  private async initializeWallet(network: string = 'eth-main') {
     try {
       await connectDB();
       
@@ -109,7 +109,7 @@ class ERC20Service {
     }
   }
 
-  private async getProvider(network: string = 'mainnet'): Promise<ethers.JsonRpcProvider> {
+  private async getProvider(network: string = 'eth-main'): Promise<ethers.JsonRpcProvider> {
     // Initialize providers if not already done
     if (Object.keys(this.providers).length === 0) {
       await this.initializeProviders();
@@ -146,10 +146,10 @@ class ERC20Service {
       }
     }
     
-    return provider || this.providers.mainnet || new ethers.JsonRpcProvider('https://eth.llamarpc.com');
+    return provider || this.providers['eth-main'] || new ethers.JsonRpcProvider('https://eth.llamarpc.com');
   }
 
-  private async getConnectedWallet(network: string = 'mainnet'): Promise<ethers.Wallet> {
+  private async getConnectedWallet(network: string = 'eth-main'): Promise<ethers.Wallet> {
     if (!this.wallet) {
       await this.initializeWallet(network);
     }
@@ -162,7 +162,7 @@ class ERC20Service {
     return this.wallet.connect(provider);
   }
 
-  async getTokenInfo(tokenAddress: string, network: string = 'mainnet'): Promise<TokenInfo | null> {
+  async getTokenInfo(tokenAddress: string, network: string = 'eth-main'): Promise<TokenInfo | null> {
     try {
       const provider = await this.getProvider(network);
       const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
@@ -206,7 +206,7 @@ class ERC20Service {
     }
   }
 
-  async getNativeBalance(network: string = 'mainnet'): Promise<string> {
+  async getNativeBalance(network: string = 'eth-main'): Promise<string> {
     try {
       const wallet = await this.getConnectedWallet(network);
       const provider = await this.getProvider(network);
@@ -226,7 +226,7 @@ class ERC20Service {
         tokenAddress,
         toAddress,
         amount,
-        network = 'mainnet',
+        network = 'eth-main',
         gasLimit,
         gasPrice
       } = params;
@@ -298,7 +298,7 @@ class ERC20Service {
         tokenAddress,
         toAddress,
         amount,
-        network = 'mainnet'
+        network = 'eth-main'
       } = params;
 
       const wallet = await this.getConnectedWallet(network);

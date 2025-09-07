@@ -37,8 +37,8 @@ const RpcNodeSchema = new mongoose.Schema({
   network: {
     type: String,
     required: true,
-    enum: ['mainnet', 'bsc', 'bsc-testnet', 'polygon', 'ethereum'],
-    default: 'bsc'
+    enum: ['eth-main', 'sepolia', 'bsc-mainnet', 'bsc-testnet'],
+    default: 'bsc-mainnet'
   },
   isActive: {
     type: Boolean,
