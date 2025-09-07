@@ -29,6 +29,14 @@ import {
   selectPepeConversionRates,
   selectUsdRates
 } from '../modules/private/coin';
+import {
+  createWithdrawal,
+  clearCreateState,
+  selectCreateWithdrawalLoading,
+  selectCreateWithdrawalError,
+  selectCreateWithdrawalSuccess,
+  selectCreatedWithdrawal
+} from '../modules/private/withdrawals';
 import { useWallet } from '@/hooks/useWallet';
 import { encrypt } from '@/lib/authlib';
 import { getCurrentUser } from '@/lib/api';
@@ -60,6 +68,12 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
   const coins = useSelector(selectCoins);
   const pepeConversionRates = useSelector(selectPepeConversionRates);
   const usdRates = useSelector(selectUsdRates);
+  
+  // Redux selectors for withdrawal creation
+  const createLoading = useSelector(selectCreateWithdrawalLoading);
+  const createError = useSelector(selectCreateWithdrawalError);
+  const createSuccess = useSelector(selectCreateWithdrawalSuccess);
+  const createdWithdrawal = useSelector(selectCreatedWithdrawal);
   
   // Use wallet hook for wallet data
   const { 
@@ -93,6 +107,36 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
     dispatch(fetchConversionRatesRequest());
     fetchWallet(); // Fetch wallet data on component mount
   }, [fetchWallet]);
+
+  // Handle Redux withdrawal creation state changes
+  useEffect(() => {
+    if (createSuccess && createdWithdrawal) {
+      setWithdrawalSuccess(true);
+      setErrorMessage('');
+      setErrorCode('');
+      setShowProgress(false);
+      setShowResult(true);
+      
+      // Refresh wallet data to reflect updated balance
+      fetchWallet();
+      
+      // Clear Redux state for next withdrawal
+      ///dispatch(clearCreateState());
+    }
+  }, [createSuccess, createdWithdrawal, fetchWallet, dispatch]);
+
+  useEffect(() => {
+    if (createError) {
+      setWithdrawalSuccess(false);
+      setErrorMessage(createError);
+      setErrorCode('WITHDRAWAL_ERROR');
+      setShowProgress(false);
+      setShowResult(true);
+      
+      // Clear Redux error state
+      dispatch(clearCreateState());
+    }
+  }, [createError, dispatch]);
 
   // Update currency when coins are loaded
   useEffect(() => {
@@ -163,67 +207,31 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
     }
   };
 
-  const handleConfirmWithdrawal = async () => {
+  const handleConfirmWithdrawal = () => {
     setShowConfirmation(false);
-    setLoading(true);
     setShowProgress(true);
 
-    try {
-      const currentUser = getCurrentUser();
-      if (!currentUser?.telegramId) {
-        throw new Error('User not authenticated');
-      }
-
-      const hash = encrypt(currentUser.telegramId);
-      
-      // Call withdrawal API
-      const response = await fetch('/api/withdrawals', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          hash,
-          currency: formData.currency,
-          network: formData.network,
-          address: formData.address,
-          amount: parseFloat(formData.amount),
-          memo: formData.memo || ''
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Withdrawal request failed');
-      }
-
-      if (data.success) {
-        setWithdrawalSuccess(true);
-        setErrorMessage('');
-        setErrorCode('');
-        
-        // Refresh wallet data to reflect updated balance
-        fetchWallet();
-        
-        toast.success('Withdrawal request submitted successfully!');
-      } else {
-        throw new Error(data.message || 'Withdrawal failed');
-      }
-      
-
-    } catch (error) {
-      console.error('Withdrawal error:', error);
+    const currentUser = getCurrentUser();
+    if (!currentUser?.telegramId) {
       setWithdrawalSuccess(false);
-      setErrorMessage(error instanceof Error ? error.message : 'Withdrawal failed. Please try again.');
-      setErrorCode('WITHDRAWAL_ERROR');
-      
-      toast.error(error instanceof Error ? error.message : 'Withdrawal failed');
-    } finally {
-      setLoading(false);
+      setErrorMessage('User not authenticated');
+      setErrorCode('AUTH_ERROR');
       setShowProgress(false);
       setShowResult(true);
+      return;
     }
+
+    const hash = encrypt(currentUser.telegramId);
+    
+    // Dispatch Redux action to create withdrawal
+    dispatch(createWithdrawal({
+      hash,
+      currency: formData.currency,
+      network: formData.network,
+      address: formData.address,
+      amount: parseFloat(formData.amount),
+      memo: formData.memo || ''
+    }));
   };
 
   const handleRetryWithdrawal = () => {
@@ -264,9 +272,9 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
     try {
       const text = await navigator.clipboard.readText();
       handleInputChange('address', text);
-      Toast.show('Address pasted from clipboard');
+      toast.success('Address pasted from clipboard');
     } catch (error) {
-      Toast.show('Failed to paste from clipboard');
+      toast.error('Failed to paste from clipboard');
     }
   };
 
@@ -518,7 +526,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
         amount={formData.amount}
         address={formData.address}
         networkIcon={getNetworkIcon(formData.network)}
-        loading={loading}
+        loading={createLoading}
       />
 
       {/* Withdrawal Progress Popup */}
@@ -537,7 +545,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
         visible={showResult}
         onClose={handleCloseResult}
         onRetry={handleRetryWithdrawal}
-        success={withdrawalSuccess}
+     
         currency={formData.currency}
         network={getNetworkName(formData.network)}
         amount={formData.amount}

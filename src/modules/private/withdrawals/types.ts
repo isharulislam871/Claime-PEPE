@@ -17,6 +17,11 @@ export interface WithdrawalsState {
   loading: boolean;
   error: string | null;
   isRecentWithdrawalsOpen: boolean;
+  // New withdrawal creation state
+  createLoading: boolean;
+  createError: string | null;
+  createSuccess: boolean;
+  createdWithdrawal: Withdrawal | null;
 }
 
 export interface FetchWithdrawalsPayload {
@@ -28,5 +33,24 @@ export interface FetchWithdrawalsSuccessPayload {
 }
 
 export interface FetchWithdrawalsFailurePayload {
+  error: string;
+}
+
+// New withdrawal creation types
+export interface CreateWithdrawalPayload {
+  hash: string;
+  currency: string;
+  network: string;
+  address: string;
+  amount: number;
+  memo?: string;
+}
+
+export interface CreateWithdrawalSuccessPayload {
+  withdrawal: Withdrawal;
+  message: string;
+}
+
+export interface CreateWithdrawalFailurePayload {
   error: string;
 }
