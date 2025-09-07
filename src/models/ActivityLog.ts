@@ -50,10 +50,7 @@ const ActivityLogSchema: Schema = new Schema({
   collection: 'activity_logs'
 });
 
-// Index for efficient querying
-ActivityLogSchema.index({ userId: 1, timestamp: -1 });
-ActivityLogSchema.index({ type: 1, timestamp: -1 });
-
+ 
 const ActivityLog: Model<IActivityLogDocument> = 
   (mongoose.models.ActivityLog as Model<IActivityLogDocument>) || 
   mongoose.model<IActivityLogDocument>('ActivityLog', ActivityLogSchema);

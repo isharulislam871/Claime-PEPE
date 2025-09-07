@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from 'antd-mobile';
 import { UpOutline, DownOutline } from 'antd-mobile-icons';
 import { useSelector } from 'react-redux';
@@ -14,6 +14,7 @@ interface PointSelectionProps {
   className?: string;
   minAmount?: number;
   maxAmount?: number;
+  defaultAmount?: string;
 }
 
 export default function PointSelection({
@@ -22,13 +23,21 @@ export default function PointSelection({
   title = "Points Amount",
   className = "mb-4",
   minAmount = 1000,
-  maxAmount
+  maxAmount,
+  defaultAmount
 }: PointSelectionProps) {
   const [showAmountSheet, setShowAmountSheet] = useState(false);
   const user = useSelector(selectCurrentUser);
   
   const userBalance = user?.balance || 0;
   const effectiveMaxAmount = maxAmount || userBalance;
+
+  // Set default amount if none is selected
+  useEffect(() => {
+    if (!selectedAmount && defaultAmount) {
+      onAmountChange(defaultAmount);
+    }
+  }, [selectedAmount, defaultAmount, onAmountChange]);
 
   const quickAmounts = [
     { 

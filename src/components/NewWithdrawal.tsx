@@ -2,32 +2,44 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
+import {
   Popup,
-  Button,
+
   Card,
-  Input,
+
   Form,
   Toast,
   SpinLoading,
   Steps
 } from 'antd-mobile';
-import { 
+import {
   CloseOutline,
- 
+
   CheckOutline,
   ClockCircleOutline,
   FileOutline
 } from 'antd-mobile-icons';
- 
+
 import { selectUserBalance } from '@/modules';
-import { 
+import {
+  fetchCoinsRequest,
+
+  fetchConversionRatesRequest,
   selectCoins,
   selectPepeConversionRates,
   selectUsdRates
 } from '../modules/private/coin';
-import CurrencySelection from './CurrencySelection';
+import { useWallet } from '@/hooks/useWallet';
+import { encrypt } from '@/lib/authlib';
 import { getCurrentUser } from '@/lib/api';
+import CurrencySelection from './CurrencySelection';
+import NetworkSelection from './NetworkSelection';
+import WithdrawalProgressPopup from './WithdrawalProgressPopup';
+import WithdrawalResultPopup from './WithdrawalResultPopup';
+import WithdrawalConfirmationPopup from './WithdrawalConfirmationPopup';
+import { toast } from 'react-toastify';
+import { Button, Input } from 'antd';
+
 
 interface NewWithdrawalProps {
   isOpen: boolean;
@@ -48,16 +60,39 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
   const coins = useSelector(selectCoins);
   const pepeConversionRates = useSelector(selectPepeConversionRates);
   const usdRates = useSelector(selectUsdRates);
+  
+  // Use wallet hook for wallet data
+  const { 
+    wallets, 
+    loading: walletLoading, 
+    fetchWallet, 
+    getWalletByCurrency 
+  } = useWallet();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [errorCode, setErrorCode] = useState('');
+
+  
+
   const [formData, setFormData] = useState<WithdrawalFormData>({
     currency: 'USDT',
-    network: 'ethereum',
+    network: 'trc20',
     address: '',
     amount: '',
     memo: ''
   });
+
+  useEffect(() => {
+    dispatch(fetchCoinsRequest());
+    dispatch(fetchConversionRatesRequest());
+    fetchWallet(); // Fetch wallet data on component mount
+  }, [fetchWallet]);
 
   // Update currency when coins are loaded
   useEffect(() => {
@@ -77,18 +112,17 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
   };
 
   const getAvailableBalance = (currency: string) => {
-    const rate = pepeConversionRates[currency] || 1;
-    return mainPepeBalance / rate;
+    // Use wallet balance instead of conversion rates
+    const wallet = getWalletByCurrency(currency);
+    return wallet?.balance || 0;
   };
-  
+
   const getUsdValue = (currency: string, amount: number) => {
     const rate = usdRates[currency] || 0;
     return (amount * rate).toFixed(2);
   };
 
-  const getCurrencyLogo = (currency: string) => {
-    return `https://cryptologos.cc/logos/${currency.toLowerCase()}-${currency.toLowerCase()}-logo.png`;
-  };
+
 
   const getCurrentFee = () => {
     return 0.001; // Mock fee
@@ -104,18 +138,23 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
     if (currentStep === 0) {
       // Validate currency and amount
       if (!formData.currency || !formData.amount || parseFloat(formData.amount) <= 0) {
-        Toast.show('Please select currency and enter valid amount');
+        toast.error('Please select currency and enter valid amount');
         return;
       }
       setCurrentStep(1);
     } else if (currentStep === 1) {
       // Validate address
       if (!formData.address) {
-        Toast.show('Please enter withdrawal address');
+        toast.error('Please enter withdrawal address');
         return;
       }
       setCurrentStep(2);
     }
+  };
+
+  const handleSubmit = () => {
+    // Show confirmation popup
+    setShowConfirmation(true);
   };
 
   const handlePreviousStep = () => {
@@ -124,32 +163,101 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
     }
   };
 
-  const handleSubmitWithdrawal = async () => {
+  const handleConfirmWithdrawal = async () => {
+    setShowConfirmation(false);
     setLoading(true);
+    setShowProgress(true);
+
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      Toast.show({
-        content: 'Withdrawal request submitted successfully!',
-        icon: 'success'
+      const currentUser = getCurrentUser();
+      if (!currentUser?.telegramId) {
+        throw new Error('User not authenticated');
+      }
+
+      const hash = encrypt(currentUser.telegramId);
+      
+      // Call withdrawal API
+      const response = await fetch('/api/withdrawals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hash,
+          currency: formData.currency,
+          network: formData.network,
+          address: formData.address,
+          amount: parseFloat(formData.amount),
+          memo: formData.memo || ''
+        }),
       });
-      onClose();
-      setCurrentStep(0);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Withdrawal request failed');
+      }
+
+      if (data.success) {
+        setWithdrawalSuccess(true);
+        setErrorMessage('');
+        setErrorCode('');
+        
+        // Refresh wallet data to reflect updated balance
+        fetchWallet();
+        
+        toast.success('Withdrawal request submitted successfully!');
+      } else {
+        throw new Error(data.message || 'Withdrawal failed');
+      }
+      
+
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      setWithdrawalSuccess(false);
+      setErrorMessage(error instanceof Error ? error.message : 'Withdrawal failed. Please try again.');
+      setErrorCode('WITHDRAWAL_ERROR');
+      
+      toast.error(error instanceof Error ? error.message : 'Withdrawal failed');
+    } finally {
+      setLoading(false);
+      setShowProgress(false);
+      setShowResult(true);
+    }
+  };
+
+  const handleRetryWithdrawal = () => {
+    setShowResult(false);
+    setCurrentStep(2); // Go back to confirmation step
+  };
+
+  const handleCloseResult = () => {
+    setShowResult(false);
+    if (withdrawalSuccess) {
+      // Reset form and close on success
       setFormData({
         currency: 'USDT',
-        network: 'ethereum',
+        network: 'trc20',
         address: '',
         amount: '',
         memo: ''
       });
-    } catch (error) {
-      Toast.show({
-        content: 'Failed to submit withdrawal request',
-        icon: 'fail'
-      });
-    } finally {
-      setLoading(false);
+      setCurrentStep(0);
+      onClose();
     }
+  };
+
+  const getNetworkIcon = (network: string) => {
+    const icons: Record<string, string> = {
+      'trc20': '🔴',
+      'erc20': '🔷',
+      'bep20': '🟡',
+      'polygon': '🟣',
+      'bitcoin': '₿',
+      'ethereum': 'Ξ',
+      'arbitrum': '🔵'
+    };
+    return icons[network] || '🌐';
   };
 
   const copyFromClipboard = async () => {
@@ -178,8 +286,15 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
               onCurrencyChange={(currency) => handleInputChange('currency', currency)}
               getAvailableBalance={getAvailableBalance}
               getUsdValue={getUsdValue}
-              getCurrencyLogo={getCurrencyLogo}
+
               title="Select Currency"
+            />
+
+            <NetworkSelection
+              selectedNetwork={formData.network}
+              onNetworkChange={(network) => handleInputChange('network', network)}
+              currency={formData.currency}
+              title="Select Network"
             />
 
             <Card title="Amount">
@@ -187,25 +302,38 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
                 <Input
                   type="number"
                   value={formData.amount}
-                  onChange={(value) => handleInputChange('amount', value)}
+                  onChange={(value) =>
+                    handleInputChange('amount', value.target.value)
+                  }
                   placeholder="0.00"
-                  clearable
+                  suffix={
+                    <Button
+                      size="small"
+                      type="link"
+                      onClick={() =>
+                        handleInputChange(
+                          'amount',
+                          Math.max(
+                            0,
+                            getAvailableBalance(formData.currency) - getCurrentFee()
+                          ).toString()
+                        )
+                      }
+                      className="text-blue-500 hover:text-blue-700 px-2 py-0 h-auto min-w-0"
+                      style={{ fontSize: '12px' }}
+                    >
+                      Use Max
+                    </Button>
+                  }
                 />
-                
+
+
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Available:</span>
                   <span className="font-semibold">
                     {getAvailableBalance(formData.currency).toFixed(8)} {formData.currency}
                   </span>
                 </div>
-                
-                <Button 
-                  size="small" 
-                  fill="outline"
-                  onClick={() => handleInputChange('amount', Math.max(0, getAvailableBalance(formData.currency) - getCurrentFee()).toString())}
-                >
-                  Use Max
-                </Button>
               </div>
             </Card>
           </div>
@@ -213,35 +341,41 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
 
       case 1:
         return (
-          <div className="space-y-4">
-            <Card title="Withdrawal Address">
-              <div className="space-y-4">
-                <div className="relative">
-                  <Input
-                    value={formData.address}
-                    onChange={(value) => handleInputChange('address', value)}
-                    placeholder="Enter wallet address"
-                    clearable
-                  />
-                  <Button 
-                    size="small" 
-                    fill="none"
+          <Card title="Withdrawal Address">
+            <div className="space-y-4">
+              <Input
+                size="large" // 🔹 makes it taller (similar to Binance)
+                value={formData.address}
+                onChange={(value) =>
+                  handleInputChange('address', value.target.value)
+                }
+                placeholder="Enter wallet address"
+                className="h-12" // 🔹 override to 48px if you want exact Binance feel
+                suffix={
+                  <Button
+                    type="text"
                     onClick={copyFromClipboard}
-                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    className="h-fit p-0 text-gray-600 hover:text-blue-600"
                   >
-                    <FileOutline />
+                    <FileOutline className="w-5 h-5" />
                   </Button>
-                </div>
-                
-                <Input
-                  value={formData.memo}
-                  onChange={(value) => handleInputChange('memo', value)}
-                  placeholder="Memo (optional)"
-                  clearable
-                />
-              </div>
-            </Card>
-          </div>
+                }
+              />
+
+              <Input
+                size="large"
+                value={formData.memo}
+                onChange={(value) =>
+                  handleInputChange('memo', value.target.value)
+                }
+                placeholder="Memo (optional)"
+                className="h-12"
+              />
+            </div>
+          </Card>
+
+
+
         );
 
       case 2:
@@ -253,17 +387,17 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
                   <span className="text-gray-600">Currency:</span>
                   <span className="font-semibold">{formData.currency}</span>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <span className="text-gray-600">Amount:</span>
                   <span className="font-semibold">{formData.amount} {formData.currency}</span>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <span className="text-gray-600">Network Fee:</span>
                   <span className="font-semibold">{getCurrentFee()} {formData.currency}</span>
                 </div>
-                
+
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">You'll Receive:</span>
@@ -272,7 +406,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 p-3 rounded-lg mt-4">
                   <div className="text-sm text-gray-600 mb-1">Address:</div>
                   <div className="text-sm font-mono break-all">{formData.address}</div>
@@ -307,8 +441,8 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
                 <p className="text-sm text-gray-500">Withdraw your earnings</p>
               </div>
             </div>
-            <Button 
-              fill='none' 
+            <Button
+
               size='small'
               onClick={onClose}
               className="!p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -341,8 +475,8 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
         <div className="bg-white border-t border-gray-100 px-4 py-4 safe-area-pb">
           <div className="flex gap-3">
             {currentStep > 0 && (
-              <Button 
-                fill="outline" 
+              <Button
+                type="default"
                 size="large"
                 onClick={handlePreviousStep}
                 className="flex-1"
@@ -350,10 +484,10 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
                 Previous
               </Button>
             )}
-            
+
             {currentStep < 2 ? (
-              <Button 
-                color="primary" 
+              <Button
+                type="primary"
                 size="large"
                 onClick={handleNextStep}
                 className="flex-1"
@@ -361,19 +495,70 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
                 Next
               </Button>
             ) : (
-              <Button 
-                color="primary" 
+              <Button
+                type="primary"
                 size="large"
-                onClick={handleSubmitWithdrawal}
-                loading={loading}
+                onClick={handleSubmit}
                 className="flex-1"
               >
-                {loading ? 'Processing...' : 'Confirm Withdrawal'}
+                Review Withdrawal
               </Button>
             )}
           </div>
         </div>
       </div>
+
+      {/* Withdrawal Confirmation Popup */}
+      <WithdrawalConfirmationPopup
+        visible={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmWithdrawal}
+        currency={formData.currency}
+        network={getNetworkName(formData.network)}
+        amount={formData.amount}
+        address={formData.address}
+        networkIcon={getNetworkIcon(formData.network)}
+        loading={loading}
+      />
+
+      {/* Withdrawal Progress Popup */}
+      <WithdrawalProgressPopup
+        visible={showProgress}
+        currency={formData.currency}
+        network={getNetworkName(formData.network)}
+        amount={formData.amount}
+        address={formData.address}
+        networkIcon={getNetworkIcon(formData.network)}
+        duration={60}
+      />
+
+      {/* Withdrawal Result Popup */}
+      <WithdrawalResultPopup
+        visible={showResult}
+        onClose={handleCloseResult}
+        onRetry={handleRetryWithdrawal}
+        success={withdrawalSuccess}
+        currency={formData.currency}
+        network={getNetworkName(formData.network)}
+        amount={formData.amount}
+        address={formData.address}
+        networkIcon={getNetworkIcon(formData.network)}
+        errorMessage={errorMessage}
+        errorCode={errorCode}
+      />
     </Popup>
   );
+
+  function getNetworkName(networkId: string): string {
+    const networks: Record<string, string> = {
+      'trc20': 'TRON (TRC20)',
+      'erc20': 'Ethereum (ERC20)',
+      'bep20': 'BSC (BEP20)',
+      'polygon': 'Polygon (MATIC)',
+      'bitcoin': 'Bitcoin Network',
+      'ethereum': 'Ethereum Network',
+      'arbitrum': 'Arbitrum One'
+    };
+    return networks[networkId] || networkId;
+  }
 }

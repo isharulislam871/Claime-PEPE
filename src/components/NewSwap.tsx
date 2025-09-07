@@ -26,6 +26,12 @@ import {
 import CurrencySelection from './CurrencySelection';
 import PointSelection from './PointSelection';
 import SwapConfirmationPopup from './SwapConfirmationPopup';
+import SwapResultPopup from './SwapResultPopup';
+import SwapProcessingPopup from './SwapProcessingPopup';
+import SwapMaintenancePopup from './SwapMaintenancePopup';
+import { toast } from 'react-toastify';
+import { encrypt } from '@/lib/authlib';
+import { getCurrentUser } from '@/lib/api';
 
 interface NewSwapProps {
   isOpen: boolean;
@@ -46,9 +52,16 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
   const pepeRates = useSelector(selectPepeConversionRates);
   const usdRates = useSelector(selectUsdRates);
   const [fromAmount, setFromAmount] = useState('');
-  const [selectedCurrency, setSelectedCurrency] = useState('usdt');
+  const [selectedCurrency, setSelectedCurrency] = useState(coins[0]?.symbol || 'USDT');
   const [isSwapping, setIsSwapping] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showProcessing, setShowProcessing] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [showMaintenance, setShowMaintenance] = useState(false);
+  const [swapSuccess, setSwapSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [errorCode, setErrorCode] = useState('');
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false); // Toggle for testing
 
 
  
@@ -69,52 +82,63 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
     return usdValue.toFixed(2);
   };
 
-  const getCurrencyLogo = (currency: string): string => {
-    const logos: { [key: string]: string } = {
-      usd: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
-      btc: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
-      eth: 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
-      usdt: 'https://cryptologos.cc/logos/tether-usdt-logo.png'
-    };
-    return logos[currency.toLowerCase()] || logos.usd;
+   
+
+  // Helper function to get coin icon from coins data
+  const getCoinIcon = (currency: string): string => {
+    const coin = coins?.find(coin => 
+      coin.symbol?.toLowerCase() === currency.toLowerCase() ||
+      coin.name?.toLowerCase() === currency.toLowerCase()
+    );
+    return coin?.icon  || ''
   };
 
+ 
+
   const swapOptions: SwapOption[] = [
-    {
-      label: 'USD',
-      value: 'usd',
-      rate: 0.000025, // 1 point = $0.000025 (40,000 points = $1)
-      icon: '💵',
-      description: '40,000 pts = $1.00'
-    },
     {
       label: 'Bitcoin (BTC)',
       value: 'btc',
       rate: 0.0000000006, // Approximate rate
-      icon: '₿',
+      icon: getCoinIcon('btc'),
       description: '~1.67M pts = 0.001 BTC'
     },
     {
       label: 'Ethereum (ETH)',
       value: 'eth',
       rate: 0.000000015, // Approximate rate
-      icon: 'Ξ',
+      icon: getCoinIcon('eth'),
       description: '~66.7K pts = 0.001 ETH'
     },
     {
       label: 'USDT',
       value: 'usdt',
       rate: 0.000025,
-      icon: '₮',
+      icon: getCoinIcon('usdt'),
       description: '40,000 pts = 1 USDT'
+    },
+    {
+      label: 'BNB',
+      value: 'bnb',
+      rate: 0.0000018, // Approximate rate
+      icon: getCoinIcon('bnb'),
+      description: '~555 pts = 0.001 BNB'
     }
   ];
+  
 
-  const selectedOption = swapOptions.find(option => option.value === selectedCurrency);
+  const selectedOption = swapOptions.find(option => option.value === selectedCurrency.toLowerCase());
   const pointsToSwap = parseInt(fromAmount) || 0;
   const convertedAmount = pointsToSwap * (selectedOption?.rate || 0);
-
+ 
+  
   const handleSwap = () => {
+    // Check if maintenance mode is active
+    if (isMaintenanceMode) {
+      setShowMaintenance(true);
+      return;
+    }
+
     if (!fromAmount || pointsToSwap <= 0) {
       Toast.show({
         content: 'Please enter a valid amount',
@@ -145,26 +169,74 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
 
   const handleConfirmSwap = async () => {
     setIsSwapping(true);
-    
+    setShowConfirmation(false);
+    setShowProcessing(true);
+    const currentUser =  getCurrentUser()
+    const userId = encrypt(currentUser?.telegramId);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      Toast.show({
-        content: `Successfully swapped ${pointsToSwap} points to ${convertedAmount.toFixed(8)} ${selectedOption?.label}`,
-        icon: 'success'
+      // Call the swap API
+      const response = await fetch('/api/swap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromAmount: pointsToSwap,
+          toCurrency: selectedCurrency,
+          toAmount: convertedAmount,
+          userId: userId
+        }),
       });
+
+      const data = await response.json();
       
-      setFromAmount('');
-      setShowConfirmation(false);
-      onClose();
+      if (data.success) {
+        setSwapSuccess(true);
+        setErrorMessage('');
+        setErrorCode('');
+        setFromAmount(''); // Clear the form on success
+        
+        // Show success toast
+      toast.success(`Swap completed! Transaction ID: ${data.transactionId}`)
+      } else {
+        setSwapSuccess(false);
+        setErrorMessage(data.message || 'Swap failed. Please try again.');
+        setErrorCode(data.errorCode || 'UNKNOWN_ERROR');
+        
+        // Show error toast
+        toast.error( data.message || 'Swap failed. Please try again.')
+      }
+      
+      setShowProcessing(false);
+      setShowResult(true);
+      
     } catch (error) {
+      console.error('Swap API error:', error);
+      setSwapSuccess(false);
+      setErrorMessage('Network error. Please check your connection and try again.');
+      setErrorCode('NETWORK_ERROR');
+      setShowProcessing(false);
+      setShowResult(true);
+      
       Toast.show({
-        content: 'Swap failed. Please try again.',
-        icon: 'fail'
+        content: 'Network error occurred',
+        icon: 'fail',
+        duration: 3000
       });
     } finally {
       setIsSwapping(false);
+    }
+  };
+
+  const handleRetrySwap = () => {
+    setShowResult(false);
+    setShowConfirmation(true);
+  };
+
+  const handleCloseResult = () => {
+    setShowResult(false);
+    if (swapSuccess) {
+      onClose();
     }
   };
 
@@ -211,6 +283,7 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
                 className="mb-0"
                 minAmount={1000}
                 maxAmount={user?.balance || 0}
+                defaultAmount="1000"
               />
 
               {/* Swap Icon */}
@@ -222,51 +295,20 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
 
               {/* To Currency */}
               <CurrencySelection
-                selectedCurrency={selectedCurrency}
+                selectedCurrency={selectedCurrency || 'USDT'}
                 onCurrencyChange={setSelectedCurrency}
                 getAvailableBalance={getAvailableBalance}
                 getUsdValue={getUsdValue}
-                getCurrencyLogo={getCurrencyLogo}
                 title="To Currency"
                 className="mb-0"
+                defaultCurrency="USDT"
               />
-
-              {/* Conversion Preview */}
-              {pointsToSwap > 0 && selectedOption && (
-                <Card className="bg-gray-50 border-none">
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600 mb-1">You will receive</div>
-                    <div className="text-xl font-bold text-green-600">
-                      {selectedOption.icon} {convertedAmount.toFixed(8)} {selectedOption.label}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Rate: 1 point = {selectedOption.rate} {selectedOption.label}
-                    </div>
-                  </div>
-                </Card>
-              )}
+ 
+           
             </Space>
           </Card>
 
-          {/* Swap Rates */}
-          <Card title="Current Rates" className="mb-4">
-            <div className="space-y-3">
-              {swapOptions.map((option) => (
-                <div key={option.value} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{option.icon}</span>
-                    <span className="font-medium">{option.label}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">
-                      {option.rate} {option.label}
-                    </div>
-                    <div className="text-xs text-gray-500">per point</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+         
         </div>
 
         {/* Footer */}
@@ -278,10 +320,15 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
             onClick={handleSwap}
             loading={isSwapping}
             disabled={!fromAmount || pointsToSwap <= 0 || pointsToSwap > (user?.balance || 0)}
-            className="bg-gradient-to-r from-cyan-500 to-blue-500 border-none font-semibold"
+            
           >
-            {isSwapping ? 'Swapping...' : `Swap ${pointsToSwap.toLocaleString()} Points`}
+            {  isSwapping 
+              ? 'Swapping...' 
+              : `Swap ${pointsToSwap.toLocaleString()} Points`
+            }
           </Button>
+          
+         
           
           <div className="text-center mt-2">
             <div className="text-xs text-gray-500">
@@ -303,6 +350,39 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
         currencyIcon={selectedOption?.icon || '💰'}
         currencyLabel={selectedOption?.label || selectedCurrency}
         isLoading={isSwapping}
+      />
+
+      {/* Swap Processing Popup */}
+      <SwapProcessingPopup
+        visible={showProcessing}
+        fromAmount={pointsToSwap}
+        toCurrency={selectedCurrency}
+        toAmount={convertedAmount}
+        currencyLabel={selectedOption?.label || selectedCurrency}
+        
+      />
+
+      {/* Swap Result Popup */}
+      <SwapResultPopup
+        visible={showResult}
+        onClose={handleCloseResult}
+        onRetry={handleRetrySwap}
+        success={swapSuccess}
+        fromAmount={pointsToSwap}
+        toCurrency={selectedCurrency}
+        toAmount={convertedAmount}
+        currencyIcon={selectedOption?.icon || '💰'}
+        currencyLabel={selectedOption?.label || selectedCurrency}
+        errorMessage={errorMessage}
+        errorCode={errorCode}
+      />
+
+      {/* Swap Maintenance Popup */}
+      <SwapMaintenancePopup
+        visible={showMaintenance}
+        onClose={() => setShowMaintenance(false)}
+        maintenanceDuration={15} // 15 minutes for demo
+        startTime={new Date()}
       />
     </Popup>
   );

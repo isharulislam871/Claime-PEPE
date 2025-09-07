@@ -3,7 +3,8 @@ import { withdrawalsSaga , userSaga } from './private';
 import { taskSaga } from './private/task';
 import { coinSaga } from './private/coin';
 import { botSaga } from './private/bot';
-import { adsSettingsSaga } from './public';
+import { walletSaga } from './private/wallet';
+import { adsSettingsSaga, rpcNodeSaga } from './public';
 import { activitySaga } from './private/activity';
 // Public sagas
  
@@ -14,7 +15,9 @@ export function* rootSaga(): Generator<Effect, void, unknown> {
     fork(taskSaga),
     fork(coinSaga),
     fork(botSaga),
+    fork(walletSaga),
     fork(adsSettingsSaga),
+    fork(rpcNodeSaga),
     fork(activitySaga),
   ]);
 }

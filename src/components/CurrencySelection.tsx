@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card } from 'antd-mobile';
 import { useSelector } from 'react-redux';
 import { selectCoins } from '../modules/private/coin';
 import CurrencySelectionPopup from './CurrencySelectionPopup';
+import { useWallet } from '@/hooks/useWallet';
 
 interface CurrencySelectionProps {
   selectedCurrency: string;
   onCurrencyChange: (currency: string) => void;
   getAvailableBalance: (currency: string) => number;
   getUsdValue: (currency: string, amount: number) => string;
-  getCurrencyLogo: (currency: string) => string;
+  defaultCurrency?: string;
   title?: string;
   className?: string;
 }
@@ -21,42 +22,49 @@ export default function CurrencySelection({
   onCurrencyChange,
   getAvailableBalance,
   getUsdValue,
-  getCurrencyLogo,
+  defaultCurrency,
   title = "Currency",
   className = "mb-4"
 }: CurrencySelectionProps) {
   const [showCurrencyPopup, setShowCurrencyPopup] = useState(false);
   const coins = useSelector(selectCoins);
 
+  const {  wallets , fetchWallet  } = useWallet();
+
+  useEffect(() => {
+    fetchWallet();
+  }, [ fetchWallet ]);
+  // Set default currency if none is selected
+  useEffect(() => {
+    if (!selectedCurrency && defaultCurrency) {
+      onCurrencyChange(defaultCurrency);
+    }
+  }, [selectedCurrency, defaultCurrency, onCurrencyChange]);
+
   const handleCurrencySelect = (currencyId: string) => {
     onCurrencyChange(currencyId);
     setShowCurrencyPopup(false);
   };
-
-  // Default currencies
-  const defaultCurrencies = [
-    { symbol: 'USDT', name: 'Tether USD', icon: '💵' },
-    { symbol: 'BTC', name: 'Bitcoin', icon: '₿' },
-    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ' },
-    { symbol: 'PEPE', name: 'Pepe', icon: '🐸' }
-  ];
-
+ const wallet = wallets.find(wallet => wallet.currency === selectedCurrency);
   // Convert coins to CurrencySelectionPopup format
   const currencyItems = useMemo(() => {
     // Use coins from Redux if available, otherwise use default currencies
-    const availableCurrencies = coins.length > 0 ? coins : defaultCurrencies;
-    
+    const availableCurrencies = coins || [];
+  
     return availableCurrencies.map((coin) => ({
       id: coin.symbol,
       symbol: coin.symbol,
       name: coin.name || coin.symbol,
-      icon: coin.icon || '💰',
-      balance: getAvailableBalance(coin.symbol),
-      usdValue: getUsdValue(coin.symbol, getAvailableBalance(coin.symbol)),
-      logoUrl: getCurrencyLogo(coin.symbol),
+      icon: coin.icon || '',
+      balance: wallets.find(wallet => wallet.currency === coin.symbol)?.balance || 0,
+      usdValue: getUsdValue(coin.symbol, wallets.find(wallet => wallet.currency === coin.symbol)?.balance || 0 ),
+      logoUrl: ('logoUrl' in coin && coin.logoUrl) ? coin.logoUrl : '',
       category: 'Cryptocurrencies'
     }));
-  }, [coins, getAvailableBalance, getUsdValue, getCurrencyLogo]);
+  }, [coins,   getUsdValue]);
+
+ 
+
 
   return (
     <>
@@ -74,7 +82,10 @@ export default function CurrencySelection({
           {/* Left side */}
           <div className="flex items-center gap-3">
             <img
-              src={getCurrencyLogo(selectedCurrency)}
+              src={(() => {
+                const selectedCoin = coins.find(coin => coin.symbol === selectedCurrency);
+                return (selectedCoin?.logoUrl) ? selectedCoin.logoUrl : '';
+              })()}
               alt={selectedCurrency}
               className="w-8 h-8 rounded-full"
             />
@@ -82,8 +93,8 @@ export default function CurrencySelection({
               <div className="font-bold">{selectedCurrency || 'Select Currency'}</div>
               <div className="text-xs text-gray-600">
                 {selectedCurrency ? (
-                  <>Balance: {getAvailableBalance(selectedCurrency).toFixed(8)} (~$
-                  {getUsdValue(selectedCurrency, getAvailableBalance(selectedCurrency))})</>
+                  <>Balance: { wallet?.balance.toFixed(8)} (~$
+                    {getUsdValue(selectedCurrency, wallet?.balance || 0)})</>
                 ) : (
                   'Loading currencies...'
                 )}

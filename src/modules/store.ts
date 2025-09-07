@@ -10,11 +10,12 @@ import { composeWithDevTools } from '@redux-devtools/extension';
  
 // Root saga
 import { rootSaga } from './rootSaga';
-import { authReducer, adsSettingsReducer } from './public';
+import { authReducer, adsSettingsReducer, rpcNodeReducer } from './public';
 import { userReducer, withdrawalsReducer, activityReducer } from './private';
 import { taskReducer } from './private/task';
 import { coinReducer } from './private/coin';
 import { botReducer } from './private/bot';
+import { walletReducer } from './private/wallet';
 
 // Create saga middleware
 const sagaMiddleware = createSagaMiddleware();
@@ -27,12 +28,14 @@ const privateReducers = combineReducers({
   coin: coinReducer,
   activity: activityReducer,
   bot: botReducer,
+  wallet: walletReducer,
 });
 
 // Combine public reducers
 const publicReducers = combineReducers({
   auth: authReducer,
   adsSettings: adsSettingsReducer,
+  rpcNodes: rpcNodeReducer,
 });
 
 // Root reducer

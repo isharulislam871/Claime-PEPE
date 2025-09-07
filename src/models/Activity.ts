@@ -22,7 +22,7 @@ const ActivitySchema = new Schema<IActivity>({
   type: {
     type: String,
     required: true,
-    enum: ['ad_view', 'task_complete', 'referral', 'bonus', 'withdrawal', 'login', 'other', 'ad_view_home' , 'api'],
+    enum: ['ad_view', 'task_complete', 'referral', 'bonus', 'withdrawal', 'login', 'other', 'ad_view_home', 'api', 'swap'],
     index: true
   },
   description: {

@@ -15,6 +15,7 @@ import {
   SearchOutline
 } from 'antd-mobile-icons';
 import { Button } from 'antd';
+import { useWallet } from '@/hooks/useWallet';
 
 interface Currency {
   id: string;
@@ -39,6 +40,44 @@ interface CurrencySelectionPopupProps {
   showCategories?: boolean;
 }
 
+
+ 
+const swapOptions: any[] = [
+  {
+    label: 'Bitcoin (BTC)',
+    value: 'btc',
+    rate: 0.0000000006, // Approximate rate
+    description: '~1.67M pts = 0.001 BTC'
+  },
+  {
+    label: 'Ethereum (ETH)',
+    value: 'eth',
+    rate: 0.000000015, // Approximate rate
+    description: '~66.7K pts = 0.001 ETH'
+  },
+  {
+    label: 'USDT',
+    value: 'usdt',
+    rate: 0.000025,
+    description: '40,000 pts = 1 USDT'
+  },
+  {
+    label: 'BNB',
+    value: 'bnb',
+    rate: 0.0000018, // Approximate rate
+    description: '~555 pts = 0.001 BNB'
+  }
+];
+
+function convertPointsToCrypto(points: number, coin: string): number {
+  const option = swapOptions.find(opt => opt.value === coin);
+  if (!option) throw new Error(`Unsupported coin: ${coin}`);
+  return points * option.rate;
+}
+
+
+
+
 export default function CurrencySelectionPopup({
   visible,
   onClose,
@@ -51,7 +90,7 @@ export default function CurrencySelectionPopup({
   showCategories = false
 }: CurrencySelectionPopupProps) {
   const [searchText, setSearchText] = useState('');
-
+  const {  wallets  } = useWallet();
   // Filter currencies based on search text
   const filteredCurrencies = useMemo(() => {
     if (!searchText.trim()) return currencies;
@@ -183,7 +222,8 @@ export default function CurrencySelectionPopup({
                   <List>
                     {categoryItems.map((currency) => {
                       const isSelected = selectedCurrency === currency.id;
-                      
+                      const wallet = wallets.find(wallet => wallet.currency === currency.id);
+ 
                       return (
                         <List.Item
                           key={currency.id}
@@ -225,7 +265,7 @@ export default function CurrencySelectionPopup({
                             </div>
                             {showBalance && (
                               <div className="text-sm text-gray-600 mt-1">
-                                Balance: {currency.balance.toFixed(8)} (~${currency.usdValue})
+                                Balance: {wallet?.balance.toFixed(8)} (~${convertPointsToCrypto(wallet?.balance || 0, 'usdt')}) .......
                               </div>
                             )}
                           </div>

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
+import UserWallet from '@/models/UserWallet';
 import Withdrawal from '@/models/Withdrawal';
 import Coin from '@/models/Coin';
 import ERC20Service from '@/lib/erc20';
-import { encrypt } from '@/lib/authlib';
+import { decrypt, encrypt } from '@/lib/authlib';
 
 // GET /api/withdrawals - Get withdrawal history for a user or all withdrawals for admin
 export async function GET(request: NextRequest) {
@@ -54,15 +55,16 @@ export async function POST(request: NextRequest) {
     await dbConnect();
     
     const body = await request.json();
-    const { telegramId, amount, currency , network, address, memo } = body;
+    const { hash, amount, currency , network, address, memo } = body;
     
-    if (!telegramId || !amount || !currency || !network || !address) {
+    if (!hash|| !amount || !currency || !network || !address) {
       return NextResponse.json(
         { error: 'Missing required fields: telegramId, amount, currency, network, address' },
         { status: 400 }
       );
     }
     
+    const telegramId = decrypt(hash)
     
     
     // Validate currency and network combinations using Coin model
@@ -96,31 +98,29 @@ export async function POST(request: NextRequest) {
     
   
     
-    // Get user and check balance
+    // Get user and wallet, check balance
     const user = await User.findByTelegramId(telegramId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
-    // For PEPE withdrawals, check PEPE balance; for others, convert from PEPE balance
-    let requiredBalance = totalAmount;
-    const contractAddress = coin.networks.find((n : any)=> n.network === network && n.isActive)?.contractAddress; 
+    const userWallet = await UserWallet.findOne({ telegramId , currency});
+    if (!userWallet) {
+      return NextResponse.json({ error: 'User wallet not found' }, { status: 404 });
+    }
     
-    const balance = await ERC20Service.getBalance(contractAddress , address , network);
-    if(parseFloat(balance) < requiredBalance){
+    // Check wallet balance for the specific currency
+    const walletBalance = userWallet.balance || 0;
+    const requiredBalance = totalAmount;
+    
+    if (walletBalance < requiredBalance) {
       return NextResponse.json(
-        { error: 'Insufficient balance' },
+        { error: `Insufficient ${currency.toUpperCase()} balance. Available: ${walletBalance}, Required: ${requiredBalance}` },
         { status: 400 }
       );
     }
-    
-    
-    if (user.balance < requiredBalance) {
-      return NextResponse.json(
-        { error: 'Insufficient balance' },
-        { status: 400 }
-      );
-    }
+
+    const contractAddress = coin.networks.find((n : any)=> n.network === network && n.isActive)?.contractAddress;
 
     
 
@@ -160,10 +160,10 @@ export async function POST(request: NextRequest) {
     
     await withdrawal.save();
     
-    // Deduct amount from user balance
-    await User.findOneAndUpdate(
+    // Deduct amount from user wallet balance
+    await UserWallet.findOneAndUpdate(
       { telegramId },
-      { $inc: { balance: -amount } }
+      { $inc: { [`balances.${currency.toUpperCase()}`]: -parseFloat(amount) } }
     );
     
     // Process withdrawal based on network type
@@ -192,10 +192,10 @@ export async function POST(request: NextRequest) {
           failureReason: transferResult.error || transferResult.msg || 'Transfer failed'
         });
         
-        // Refund user balance on failure
-        await User.findOneAndUpdate(
+        // Refund user wallet balance on failure
+        await UserWallet.findOneAndUpdate(
           { telegramId },
-          { $inc: { balance: parseFloat(amount) } }
+          { $inc: { [`balances.${currency.toUpperCase()}`]: parseFloat(amount) } }
         );
       }
       
@@ -207,10 +207,10 @@ export async function POST(request: NextRequest) {
         failureReason: error instanceof Error ? error.message : 'Processing failed'
       });
       
-      // Refund user balance on failure
-      await User.findOneAndUpdate(
+      // Refund user wallet balance on failure
+      await UserWallet.findOneAndUpdate(
         { telegramId },
-        { $inc: { balance: parseFloat(amount) } }
+        { $inc: { [`balances.${currency.toUpperCase()}`]: parseFloat(amount) } }
       );
     } 
     
@@ -255,17 +255,17 @@ export async function PUT(request: NextRequest) {
       withdrawal.markAsCompleted(transactionId);
     } else if (status === 'failed') {
       withdrawal.markAsFailed(failureReason || 'Processing failed');
-      // Refund user balance
-      await User.findOneAndUpdate(
+      // Refund user wallet balance
+      await UserWallet.findOneAndUpdate(
         { telegramId: withdrawal.telegramId },
-        { $inc: { balance: withdrawal.amount } }
+        { $inc: { [`balances.${withdrawal.currency}`]: withdrawal.amount } }
       );
     } else if (status === 'cancelled') {
       withdrawal.status = 'cancelled';
-      // Refund user balance
-      await User.findOneAndUpdate(
+      // Refund user wallet balance
+      await UserWallet.findOneAndUpdate(
         { telegramId: withdrawal.telegramId },
-        { $inc: { balance: withdrawal.amount } }
+        { $inc: { [`balances.${withdrawal.currency}`]: withdrawal.amount } }
       );
     } else {
       withdrawal.status = status;
