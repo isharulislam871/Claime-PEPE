@@ -207,7 +207,7 @@ export default function WithdrawalResultPopup({
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Transaction Hash:</span>
                     <span className="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                      {selectWithdrawal?.transactionId}
+                      {formatAddress(selectWithdrawal?.transactionId as string)}
                     </span>
                   </div>
                   
@@ -532,14 +532,7 @@ export default function WithdrawalResultPopup({
             )}
           </div>
 
-          <div className="text-center">
-            <div className="text-xs text-gray-500">
-              {true
-                ? 'Transaction completed successfully • Blockchain confirmed'
-                : 'Need help? Contact our support team'
-              }
-            </div>
-          </div>
+          
         </div>
       </div>
     </Popup>

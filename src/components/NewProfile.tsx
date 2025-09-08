@@ -244,43 +244,7 @@ export default function NewProfile({ isOpen, onClose }: NewProfileProps) {
             </List>
           </Card>
 
-          {/* Settings */}
-          <Card title="Settings" className="mb-6">
-            <List>
-              <List.Item
-                prefix={<BellOutline />}
-                extra={
-                  <Switch
-                    checked={notifications}
-                    onChange={setNotifications}
-                  />
-                }
-              >
-                Notifications
-              </List.Item>
-
-              <List.Item
-                prefix={<SettingOutlined />}
-                extra={
-                  <Switch
-                    checked={darkMode}
-                    onChange={setDarkMode}
-                  />
-                }
-              >
-                Dark Mode
-              </List.Item>
-
-              <List.Item
-                prefix={<SecurityScanOutlined />}
-                extra={<RightOutline />}
-                clickable
-                onClick={handleSettings}
-              >
-                Privacy & Security
-              </List.Item>
-            </List>
-          </Card>
+         
 
           {/* Support & Help */}
           <Card title="Support & Help" className="mb-6">

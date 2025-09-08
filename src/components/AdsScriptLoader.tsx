@@ -25,7 +25,9 @@ export default function AdsScriptLoader({ adsSettings, vpnDetected }: AdsScriptL
 
   return (
 
-    <> <Script
+    <> 
+    
+    <Script
       src={`https://ad.gigapub.tech/script?id=${adsSettings.gigaPubAppId}`}
       strategy="afterInteractive"
       onLoad={() => {

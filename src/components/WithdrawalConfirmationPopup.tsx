@@ -36,7 +36,7 @@ export default function WithdrawalConfirmationPopup({
   amount,
   address,
   networkIcon,
-  fee = '0.5 USDT',
+  fee = '0.03 USDT',
   estimatedTime = '5-10 minutes',
   loading = false
 }: WithdrawalConfirmationPopupProps) {

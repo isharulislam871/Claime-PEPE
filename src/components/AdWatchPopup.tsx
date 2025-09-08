@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Popup, Card, List, Button, Badge, ProgressBar } from 'antd-mobile';
+import { Popup, Card, List, Button, Badge, ProgressBar, Empty } from 'antd-mobile';
 import { PayCircleOutline, CloseOutline, EyeOutline, StarOutline } from 'antd-mobile-icons';
 import { PlayCircleOutlined, EyeOutlined, TrophyOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { LoadAds } from '@/lib/ads';
+import { selectAdsSettings } from '@/modules';
+import { useSelector } from 'react-redux';
 
 interface AdWatchPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdWatched?: (reward: number) => void;
 }
 
 interface AdData {
@@ -31,7 +32,7 @@ interface AdOption {
   available: boolean;
 }
 
-export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPopupProps) {
+export default function AdWatchPopup({ isOpen, onClose  }: AdWatchPopupProps) {
   const [adData, setAdData] = useState<AdData>({
     dailyAdsWatched: 0,
     totalAdsWatched: 0,
@@ -42,6 +43,7 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
   const [isWatching, setIsWatching] = useState(false);
   const [watchingAdId, setWatchingAdId] = useState<string | null>(null);
   const [watchProgress, setWatchProgress] = useState(0);
+  const AdsSettings = useSelector(selectAdsSettings);
 
   const adOptions: AdOption[] = [
     {
@@ -51,7 +53,7 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
       reward: 5,
       duration: 15,
       type: 'video',
-      available: true
+      available:  AdsSettings?.enableGigaPubAds || false
     },
     {
       id: 'video-medium',
@@ -60,9 +62,9 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
       reward: 10,
       duration: 30,
       type: 'video',
-      available: true
-    } 
-    
+      available: AdsSettings?.enableMonetag || false
+    }
+
   ];
 
   useEffect(() => {
@@ -72,11 +74,11 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
       const data = JSON.parse(savedData);
       const today = new Date().toDateString();
       const lastAdDate = data.lastAdWatched ? new Date(data.lastAdWatched).toDateString() : null;
-      
+
       // Reset daily count if it's a new day
       const dailyAdsWatched = lastAdDate === today ? (data.dailyAdsWatched || 0) : 0;
       const canWatchAd = dailyAdsWatched < 20; // Daily limit
-      
+
       setAdData({
         dailyAdsWatched,
         totalAdsWatched: data.totalAdsWatched || 0,
@@ -93,22 +95,32 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
     setIsWatching(true);
     setWatchingAdId(ad.id);
     setWatchProgress(0);
- 
-    if(ad.id === 'video-medium') {
-      await LoadAds('9827587');
-      
-    }
-    
-    // Check if showGiga method exists and call it safely
-    try {
-      if (typeof window !== 'undefined' && window && 'showGiga' in window && typeof (window as any).showGiga === 'function') {
-        await (window as any).showGiga();
-       
+
+    if (ad.id === 'video-medium') {
+      if (AdsSettings?.enableMonetag) {
+        await LoadAds('9827587');
+      } else {
+        toast.error('Monetag ad not enabled!');
+        setIsWatching(false);
+        setWatchingAdId(null);
+        return;
       }
-    } catch (error) {
-      console.warn('showGiga method failed:', error);
-      // Continue with ad simulation even if showGiga fails
     }
+
+    if (ad.id === 'video-short') {
+      // Check if showGiga method exists and call it safely
+      try {
+        if (typeof window !== 'undefined' && window && 'showGiga' in window && typeof (window as any).showGiga === 'function') {
+          await (window as any).showGiga();
+
+        }
+      } catch (error) {
+        console.warn('showGiga method failed:', error);
+        // Continue with ad simulation even if showGiga fails
+      }
+    }
+
+
 
     try {
       // Simulate ad watching with progress
@@ -143,13 +155,9 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
       localStorage.setItem('adWatchData', JSON.stringify(newData));
       setAdData(newData);
 
-      // Call callback if provided
-      if (onAdWatched) {
-        onAdWatched(ad.reward);
-      }
-
-      toast.success(`Ad watched! +${ad.reward} points earned!`);
       
+      toast.success(`Ad watched! +${ad.reward} points earned!`);
+
     } catch (error) {
       toast.error('Failed to watch ad. Please try again.');
     } finally {
@@ -206,7 +214,7 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <EyeOutlined className="text-2xl text-gray-600" />
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="text-lg font-bold mb-1 text-gray-600">
                     Daily Progress
@@ -216,7 +224,7 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
                   </div>
                 </div>
 
-                <Badge 
+                <Badge
                   content={`${adData.dailyAdsWatched}/${adData.dailyLimit}`}
                   color="warning"
                 />
@@ -257,27 +265,26 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
           {/* Ad Options */}
           <Card title="Available Ads" className="mb-4">
             <div className="space-y-3">
-              {adOptions.map((ad) => (
+              {adOptions.filter(ad => ad.available).length > 0 ? (
+                adOptions.filter(ad => ad.available).map((ad) => (
                 <div
                   key={ad.id}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    ad.available && adData.canWatchAd
+                  className={`p-4 rounded-lg border-2 transition-all ${ad.available && adData.canWatchAd
                       ? 'border-red-200 bg-red-50 hover:border-red-300 cursor-pointer'
                       : 'border-gray-200 bg-gray-50 opacity-60'
-                  } ${watchingAdId === ad.id ? 'border-red-400 bg-red-100' : ''}`}
+                    } ${watchingAdId === ad.id ? 'border-red-400 bg-red-100' : ''}`}
                   onClick={() => handleWatchAd(ad)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      ad.type === 'rewarded' ? 'bg-yellow-100' : 'bg-red-100'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${ad.type === 'rewarded' ? 'bg-yellow-100' : 'bg-red-100'
+                      }`}>
                       {ad.type === 'rewarded' ? (
                         <TrophyOutlined className="text-yellow-600 text-lg" />
                       ) : (
                         <PlayCircleOutlined className="text-red-600 text-lg" />
                       )}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-gray-900">{ad.title}</h3>
@@ -309,7 +316,18 @@ export default function AdWatchPopup({ isOpen, onClose, onAdWatched }: AdWatchPo
                     </div>
                   )}
                 </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Empty
+                    description="No ads available"
+                    imageStyle={{ height: 60 }}
+                  />
+                  <p className="text-gray-500 text-sm mt-2">
+                    Ads are currently disabled or not configured. Check your settings!
+                  </p>
+                </div>
+              )}
             </div>
           </Card>
 

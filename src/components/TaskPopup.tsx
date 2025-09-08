@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Popup, Card, List, Badge, ProgressBar } from 'antd-mobile';
+import { Popup, Card, List, Badge, ProgressBar, Empty } from 'antd-mobile';
 import { CloseOutline, CheckCircleOutline, RightOutline, StarOutline } from 'antd-mobile-icons';
 import { UnorderedListOutlined,  TwitterOutlined, YoutubeOutlined, InstagramOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
@@ -41,56 +41,7 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
 
   useEffect(() => {
     // Initialize tasks
-    const initialTasks: Task[] = [
-      {
-        id: 'join-telegram',
-        title: 'Join Our Telegram Channel',
-        description: 'Join our official Telegram channel for updates and exclusive content',
-        reward: 100,
-        type: 'telegram',
-        url: 'https://t.me/taskup_official',
-        difficulty: 'easy',
-        estimatedTime: '1 min',
-        completed: false,
-        verificationRequired: true
-      },
-      {
-        id: 'follow-twitter',
-        title: 'Follow on Twitter',
-        description: 'Follow our Twitter account and stay updated with latest news',
-        reward: 75,
-        type: 'twitter',
-        url: 'https://twitter.com/taskup_app',
-        difficulty: 'easy',
-        estimatedTime: '30 sec',
-        completed: false,
-        verificationRequired: true
-      },
-      {
-        id: 'subscribe-youtube',
-        title: 'Subscribe YouTube Channel',
-        description: 'Subscribe to our YouTube channel for tutorials and updates',
-        reward: 150,
-        type: 'youtube',
-        url: 'https://youtube.com/@taskup',
-        difficulty: 'medium',
-        estimatedTime: '2 min',
-        completed: false,
-        verificationRequired: true
-      },
-      {
-        id: 'follow-instagram',
-        title: 'Follow on Instagram',
-        description: 'Follow our Instagram for behind-the-scenes content',
-        reward: 80,
-        type: 'instagram',
-        url: 'https://instagram.com/taskup_app',
-        difficulty: 'easy',
-        estimatedTime: '1 min',
-        completed: false,
-        verificationRequired: true
-      }
-    ];
+    const initialTasks: Task[] = []
 
     
     // Load saved progress
@@ -307,7 +258,7 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
                     Task Progress
                   </div>
                   <div className="text-sm text-black/80">
-                    {getCompletedTasksCount()} of {tasks.length} tasks completed
+                    {tasks.length > 0 ? `${getCompletedTasksCount()} of ${tasks.length} tasks completed` : 'No tasks available'}
                   </div>
                 </div>
 
@@ -319,7 +270,7 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
 
               <div className="mb-4">
                 <ProgressBar
-                  percent={(getCompletedTasksCount() / tasks.length) * 100}
+                  percent={tasks.length > 0 ? (getCompletedTasksCount() / tasks.length) * 100 : 0}
                   className="mb-2"
                 />
                 <div className="text-xs text-black/80 text-center">
@@ -352,7 +303,8 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
           {/* Task List */}
           <Card title="Available Tasks" className="mb-4">
             <div className="space-y-3">
-              {tasks.map((task) => (
+              {tasks.length > 0 ? (
+                tasks.map((task) => (
                 <div
                   key={task.id}
                   className={`p-4 rounded-lg border-2 transition-all ${
@@ -431,7 +383,18 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
                     </div>
                   </div>
                 </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Empty
+                    description="No tasks available"
+                    imageStyle={{ height: 60 }}
+                  />
+                  <p className="text-gray-500 text-sm mt-2">
+                    Check back later for new tasks to earn points!
+                  </p>
+                </div>
+              )}
             </div>
           </Card>
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import User from '@/models/User';
 import UserWallet from '@/models/UserWallet';
 import History from '@/models/History';
+import Withdrawal from '@/models/Withdrawal';
 import mongoose from 'mongoose';
 import { decrypt } from '@/lib/authlib';
 
@@ -39,6 +40,28 @@ interface WalletResponse {
       status: string;
       timestamp: Date;
     }>;
+    withdrawals: {
+      recent: Array<{
+        id: string;
+        amount: number;
+        currency: string;
+        network: string;
+        address: string;
+        status: string;
+        networkFee: number;
+        transactionId?: string;
+        failureReason?: string;
+        createdAt: Date;
+        processedAt?: Date;
+      }>;
+      summary: {
+        totalWithdrawn: number;
+        pendingAmount: number;
+        pendingCount: number;
+        completedCount: number;
+        failedCount: number;
+      };
+    };
   };
 }
 
@@ -103,6 +126,48 @@ export async function GET(request: NextRequest) {
       .limit(10)
       .select('transactionId type action amount currency status timestamp');
 
+    // Get recent withdrawals (last 10)
+    const recentWithdrawals = await Withdrawal.findByTelegramId(telegramId, 10);
+
+    // Get withdrawal summary statistics
+    const totalWithdrawnResult = await Withdrawal.getTotalWithdrawn(user._id.toString());
+    const totalWithdrawn = totalWithdrawnResult[0]?.total || 0;
+
+    // Get withdrawal counts by status
+    const withdrawalStats = await Withdrawal.aggregate([
+      { $match: { telegramId } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' }
+        }
+      }
+    ]);
+
+    // Process withdrawal statistics
+    let pendingAmount = 0;
+    let pendingCount = 0;
+    let completedCount = 0;
+    let failedCount = 0;
+
+    withdrawalStats.forEach(stat => {
+      switch (stat._id) {
+        case 'pending':
+        case 'processing':
+          pendingAmount += stat.totalAmount;
+          pendingCount += stat.count;
+          break;
+        case 'completed':
+          completedCount += stat.count;
+          break;
+        case 'failed':
+        case 'cancelled':
+          failedCount += stat.count;
+          break;
+      }
+    });
+
     // Format wallet data
     const formattedWallets = wallets.map(wallet => ({
       currency: wallet.currency,
@@ -126,6 +191,21 @@ export async function GET(request: NextRequest) {
       timestamp: tx.timestamp
     }));
 
+    // Format withdrawal data
+    const formattedWithdrawals = recentWithdrawals.map(withdrawal => ({
+      id: withdrawal._id?.toString() || withdrawal.id || '',
+      amount: withdrawal.amount,
+      currency: withdrawal.currency,
+      network: withdrawal.network,
+      address: withdrawal.address,
+      status: withdrawal.status,
+      networkFee: withdrawal.networkFee,
+      transactionId: withdrawal.transactionId,
+      failureReason: withdrawal.failureReason,
+      createdAt: withdrawal.createdAt,
+      processedAt: withdrawal.processedAt
+    }));
+
     return NextResponse.json({
       success: true,
       message: 'Wallet data retrieved successfully',
@@ -141,7 +221,17 @@ export async function GET(request: NextRequest) {
           available: totalBalance.totalBalance || 0,
           locked: totalBalance.totalLocked || 0
         },
-        recentTransactions: formattedTransactions
+        recentTransactions: formattedTransactions,
+        withdrawals: {
+          recent: formattedWithdrawals,
+          summary: {
+            totalWithdrawn,
+            pendingAmount,
+            pendingCount,
+            completedCount,
+            failedCount
+          }
+        }
       }
     } as WalletResponse);
 

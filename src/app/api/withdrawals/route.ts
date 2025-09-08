@@ -25,14 +25,16 @@ export async function GET(request: NextRequest) {
       if (!hash) {
         return NextResponse.json({ error: 'telegramId is required' }, { status: 400 });
       }
-      const telegramId = encrypt(hash)
-    const withdrawals = await Withdrawal.findByTelegramId(telegramId, limit);
+      const telegramId = decrypt(hash)
+    const withdrawals = await Withdrawal.find({  telegramId } ).sort({ createdAt: -1 }).limit(limit)
+
+   
     
     // Enrich withdrawals with coin logos
     const enrichedWithdrawals = await Promise.all(
       withdrawals.map(async (withdrawal: any) => {
         const coin = await Coin.findOne({ 
-          symbol: withdrawal.currency?.toUpperCase(),
+          symbol: withdrawal.currency,
           isActive: true 
         });
         
@@ -105,7 +107,8 @@ export async function POST(request: NextRequest) {
     
     // Check minimum withdrawal amounts
     const minWithdrawals: { [key: string]: number } = {
-      'USDT': 0.25
+      'USDT': 0.1,
+      'PEPE': 50000
     };
     
     const minAmount = minWithdrawals[currency.toUpperCase()];
@@ -118,6 +121,14 @@ export async function POST(request: NextRequest) {
     
     // Get network fees from API
     let networkFee = 0;
+    
+    // Set network fees for specific currencies
+    const networkFees: { [key: string]: number } = {
+      'USDT': 0.03,
+      'PEPE': 10000
+    };
+    
+    networkFee = networkFees[currency.toUpperCase()] || 0;
     
     const totalAmount = parseFloat(amount) + networkFee;
     
@@ -204,7 +215,7 @@ export async function POST(request: NextRequest) {
     // Deduct amount from user wallet balance
     await UserWallet.findOneAndUpdate(
       { telegramId , currency},
-      { $inc: { balance :  -parseFloat(amount) } }
+      { $inc: { balance :  -requiredBalance } }
     );
     
     // Process withdrawal based on network type

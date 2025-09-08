@@ -1,50 +1,67 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
+import React, { useEffect, useState } from 'react';
+import {
   Popup,
   List,
   Empty,
   PullToRefresh,
-  Badge
+
 } from 'antd-mobile';
-import { 
+import {
   CloseOutline,
   PayCircleOutline
 } from 'antd-mobile-icons';
-import { timeAgo } from '@/lib/timeAgo';
+
 import { useSelector, useDispatch } from 'react-redux';
-import { selectRecentWithdrawals , fetchWithdrawals  } from '@/modules';
+import { selectRecentWithdrawals, fetchWithdrawals } from '@/modules';
+import WithdrawHistoryDetailsPopup from './WithdrawHistoryDetailsPopup';
+import { Tag } from 'antd';
 
 interface WithdrawHistoryPopupProps {
   visible: boolean;
   onClose: () => void;
 }
 
+
+const formatAddress = (address: string) => {
+  if (address.length <= 12) return address;
+  return `${address.slice(0, 6)}...${address.slice(-6)}`;
+};
+
 export default function WithdrawHistoryPopup({ visible, onClose }: WithdrawHistoryPopupProps) {
   const dispatch = useDispatch();
   const withdrawals = useSelector(selectRecentWithdrawals);
-  const [refreshing, setRefreshing] = useState(false);
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState<any>(null);
+  const [detailsVisible, setDetailsVisible] = useState(false);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
+  useEffect(() => {
     dispatch(fetchWithdrawals());
-    // Simulate network delay for better UX
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+  }, [dispatch])
+  const handleRefresh = async () => {
+    dispatch(fetchWithdrawals());
+  };
+
+  const handleWithdrawalClick = (withdrawal: any) => {
+    setSelectedWithdrawal(withdrawal);
+    setDetailsVisible(true);
+  };
+
+  const handleDetailsClose = () => {
+    setDetailsVisible(false);
+    setSelectedWithdrawal(null);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'text-green-600 bg-green-100';
+        return 'success';
       case 'pending':
-        return 'text-yellow-600 bg-yellow-100';
+        return 'processing';
       case 'failed':
-        return 'text-red-600 bg-red-100';
+        return 'error';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return 'default';
     }
   };
 
@@ -75,7 +92,7 @@ export default function WithdrawHistoryPopup({ visible, onClose }: WithdrawHisto
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold">Withdrawal History</h2>
-          <CloseOutline 
+          <CloseOutline
             className="text-gray-500 cursor-pointer"
             onClick={onClose}
           />
@@ -92,6 +109,7 @@ export default function WithdrawHistoryPopup({ visible, onClose }: WithdrawHisto
                   {withdrawals.map((withdrawal, index) => (
                     <List.Item
                       key={index}
+                      onClick={() => handleWithdrawalClick(withdrawal)}
                       prefix={
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                           <PayCircleOutline className="text-blue-600" />
@@ -99,21 +117,21 @@ export default function WithdrawHistoryPopup({ visible, onClose }: WithdrawHisto
                       }
                       extra={
                         <div className="text-right">
-                          <div className="text-blue-600 font-semibold">
-                            ${withdrawal.amount?.toFixed(2) || '0.00'}
-                          </div>
-                          <div className="text-xs text-gray-500">{timeAgo(withdrawal.createdAt)}</div>
-                          <Badge 
-                            content={getStatusText(withdrawal.status || 'pending')}
-                            className={`text-xs px-2 py-1 rounded-full ${getStatusColor(withdrawal.status || 'pending')}`}
-                          />
+
+
+                          <Tag
+                            color={getStatusColor(withdrawal.status || 'pending')}
+
+                          >
+                            {getStatusText(withdrawal.status || 'pending')}
+                          </Tag>
                         </div>
                       }
                     >
                       <div>
                         <div className="font-semibold">Withdrawal Request</div>
                         <div className="text-sm text-gray-600">
-                          {withdrawal.method || 'PayPal'} • {withdrawal.currency || 0} points converted
+                          {withdrawal.method || 'PayPal'} • {withdrawal.currency || 0}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
                           {new Date(withdrawal.createdAt).toLocaleDateString('en-US', {
@@ -126,7 +144,7 @@ export default function WithdrawHistoryPopup({ visible, onClose }: WithdrawHisto
                         </div>
                         {withdrawal.transactionId && (
                           <div className="text-xs text-gray-400 mt-1">
-                            ID: {withdrawal.transactionId}
+                            ID: {formatAddress(withdrawal.transactionId)}
                           </div>
                         )}
                       </div>
@@ -145,7 +163,12 @@ export default function WithdrawHistoryPopup({ visible, onClose }: WithdrawHisto
           </PullToRefresh>
         </div>
 
-         
+        {/* Withdrawal Details Popup */}
+        <WithdrawHistoryDetailsPopup
+          visible={detailsVisible}
+          onClose={handleDetailsClose}
+          withdrawal={selectedWithdrawal}
+        />
       </div>
     </Popup>
   );

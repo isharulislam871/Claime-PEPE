@@ -265,7 +265,7 @@ export default function WithdrawHistoryDetailsPopup({
             <Card className="rounded-lg border-red-200">
               <div className="space-y-2">
                 <h3 className="font-semibold text-red-600">Failure Reason</h3>
-                <p className="text-sm text-red-700 bg-red-50 p-2 rounded">
+                <p className="text-sm text-red-700 bg-red-50 p-2 rounded min-h-fit max-h-32 overflow-y-auto break-words">
                   {withdrawal.failureReason}
                 </p>
               </div>
@@ -288,26 +288,16 @@ export default function WithdrawHistoryDetailsPopup({
               </Button>
             )}
             
-            {withdrawal.status === 'failed' && (
-              <Button 
-                block 
-                color="primary"
-                onClick={() => {
-                  // Handle retry withdrawal
-                  console.log('Retry withdrawal:', withdrawal.id);
-                }}
-              >
-                Retry Withdrawal
-              </Button>
-            )}
+           
             
             {withdrawal.transactionId && (
               <Button 
                 block 
                 fill="outline"
+                color="primary"
                 onClick={() => {
                   // Open blockchain explorer
-                  const explorerUrl = `https://etherscan.io/tx/${withdrawal.transactionId}`;
+                  const explorerUrl = `https://bscscan.com/tx/${withdrawal.transactionId}`;
                   window.open(explorerUrl, '_blank');
                 }}
               >
