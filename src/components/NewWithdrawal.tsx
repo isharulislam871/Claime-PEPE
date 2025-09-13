@@ -96,7 +96,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
 
   const [formData, setFormData] = useState<WithdrawalFormData>({
     currency: 'USDT',
-    network: 'trc20',
+    network: 'bsc-mainnet',
     address: '',
     amount: '',
     memo: ''
@@ -245,7 +245,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
       // Reset form and close on success
       setFormData({
         currency: 'USDT',
-        network: 'trc20',
+        network: 'bsc-mainnet',
         address: '',
         amount: '',
         memo: ''

@@ -6,18 +6,7 @@ import {
   DeleteOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-
-interface Wallet {
-  _id: string;
-  address: string;
-  type: 'hot' | 'cold';
-  currency: string;
-  balance: number;
-  status: 'active' | 'inactive' | 'maintenance';
-  network?: string;
-  createdAt: string;
-  lastTransaction?: string;
-}
+import { Wallet } from '@/types/wallet';
 
 interface WalletTableProps {
   wallets: Wallet[];
@@ -92,14 +81,16 @@ export default function WalletTable({
       key: 'network',
       render: (network: string) => {
         const networkColors = {
-          'mainnet': 'blue',
-          'bsc': 'gold',
+          'eth-main': 'blue',
+          'sepolia': 'cyan',
+          'bsc-mainnet': 'gold',
           'bsc-testnet': 'orange'
         };
         const networkLabels = {
-          'mainnet': 'ETH',
-          'bsc': 'BSC',
-          'bsc-testnet': 'BSC-TEST'
+          'eth-main': 'ETH Mainnet',
+          'sepolia': 'Sepolia',
+          'bsc-mainnet': 'BSC Mainnet',
+          'bsc-testnet': 'BSC Testnet'
         };
         return (
           <Tag color={networkColors[network as keyof typeof networkColors] || 'default'}>

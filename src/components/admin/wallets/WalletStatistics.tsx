@@ -5,18 +5,7 @@ import {
   SwapOutlined, 
   HistoryOutlined 
 } from '@ant-design/icons';
-
-interface Wallet {
-  _id: string;
-  address: string;
-  type: 'hot' | 'cold';
-  currency: string;
-  balance: number;
-  status: 'active' | 'inactive' | 'maintenance';
-  network?: string;
-  createdAt: string;
-  lastTransaction?: string;
-}
+import { Wallet } from '@/types/wallet';
 
 interface WalletStatisticsProps {
   wallets: Wallet[];

@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 interface EthTransferParams {
   toAddress: string;
   amount: string; // Amount in ETH
-  network?: 'mainnet' | 'sepolia' | 'bsc' | 'bsc-testnet';
+  network?: 'eth-main' | 'sepolia' | 'bsc-mainnet' | 'bsc-testnet';
   gasLimit?: string;
   gasPrice?: string;
 }
@@ -32,14 +32,19 @@ class EthereumService {
 
   // Network configurations
   private networks: { [key: string]: NetworkConfig } = {
-    mainnet: {
+    'eth-main': {
       name: 'Ethereum Mainnet',
       chainId: 1,
       rpcUrl: process.env.ETHEREUM_RPC_URL || 'https://eth.llamarpc.com',
       nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
     },
-  
-    bsc: {
+    'sepolia': {
+      name: 'Sepolia Testnet',
+      chainId: 11155111,
+      rpcUrl: process.env.SEPOLIA_RPC_URL || 'https://eth-sepolia.g.alchemy.com/v2/demo',
+      nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 }
+    },
+    'bsc-mainnet': {
       name: 'Binance Smart Chain',
       chainId: 56,
       rpcUrl: process.env.BSC_RPC_URL || 'https://bsc-dataseed.binance.org/',
@@ -68,18 +73,18 @@ class EthereumService {
     }
   }
 
-  private getProvider(network: string = 'mainnet'): ethers.JsonRpcProvider {
-    return this.providers[network] || this.providers.mainnet;
+  private getProvider(network: string = 'eth-main'): ethers.JsonRpcProvider {
+    return this.providers[network] || this.providers['eth-main'];
   }
 
-  private getConnectedWallet(network: string = 'mainnet'): ethers.Wallet {
+  private getConnectedWallet(network: string = 'eth-main'): ethers.Wallet {
     if (!this.wallet) {
       throw new Error('Wallet not initialized. Please set WALLET_PRIVATE_KEY environment variable.');
     }
     return this.wallet.connect(this.getProvider(network));
   }
 
-  async getBalance(address: string, network: string = 'mainnet'): Promise<string> {
+  async getBalance(address: string, network: string = 'eth-main'): Promise<string> {
     try {
       const provider = this.getProvider(network);
       const balance = await provider.getBalance(address);
@@ -90,7 +95,7 @@ class EthereumService {
     }
   }
 
-  async getWalletBalance(network: string = 'mainnet'): Promise<string> {
+  async getWalletBalance(network: string = 'eth-main'): Promise<string> {
     if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
@@ -102,7 +107,7 @@ class EthereumService {
       const {
         toAddress,
         amount,
-        network = 'mainnet',
+        network = 'eth-main',
         gasLimit,
         gasPrice
       } = params;
@@ -148,7 +153,7 @@ class EthereumService {
       const {
         toAddress,
         amount,
-        network = 'mainnet'
+        network = 'eth-main'
       } = params;
 
       const provider = this.getProvider(network);
@@ -178,7 +183,7 @@ class EthereumService {
     }
   }
 
-  async getTransactionStatus(txHash: string, network: string = 'mainnet'): Promise<{
+  async getTransactionStatus(txHash: string, network: string = 'eth-main'): Promise<{
     status: 'pending' | 'confirmed' | 'failed';
     blockNumber?: number;
     gasUsed?: string;
@@ -207,7 +212,7 @@ class EthereumService {
     }
   }
 
-  async getTransactionHistory(address: string, network: string = 'mainnet', limit: number = 10): Promise<any[]> {
+  async getTransactionHistory(address: string, network: string = 'eth-main', limit: number = 10): Promise<any[]> {
     try {
       const provider = this.getProvider(network);
       
@@ -236,7 +241,7 @@ class EthereumService {
     }
   }
 
-  getNetworkInfo(network: string = 'mainnet'): NetworkConfig | null {
+  getNetworkInfo(network: string = 'eth-main'): NetworkConfig | null {
     return this.networks[network] || null;
   }
 

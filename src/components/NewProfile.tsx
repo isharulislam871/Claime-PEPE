@@ -158,7 +158,7 @@ export default function NewProfile({ isOpen, onClose }: NewProfileProps) {
             <div className="flex items-center gap-4 p-4">
               <div className="relative">
                 <Avatar
-                  src={user?.profilePicUrl as any || currentUser.profilePicUrl as any}
+                  src={user?.profilePicUrl as any }
 
                   className="border-4 border-white shadow-lg"
                 />
@@ -173,13 +173,13 @@ export default function NewProfile({ isOpen, onClose }: NewProfileProps) {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-xl font-bold text-gray-900">
-                    {user?.username || currentUser.username}
+                    {user?.username }
                   </h3>
                   
                 </div>
 
                 <p className="text-sm text-gray-600 mb-2">
-                  @{user?.telegramUsername || currentUser.telegramUsername}
+                  @{user?.telegramUsername  }
                 </p>
 
                 <div className="bg-purple-50 rounded-lg p-2">

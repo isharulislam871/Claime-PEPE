@@ -149,7 +149,7 @@ export default function UsersPage() {
       dataIndex: 'balance',
       key: 'balance',
       render: (balance: number) => (
-        <span className="font-semibold text-green-600">{balance.toLocaleString()} PEPE</span>
+        <span className="font-semibold text-green-600">{balance.toLocaleString()} pts</span>
       ),
     },
     {
@@ -157,7 +157,7 @@ export default function UsersPage() {
       dataIndex: 'totalEarned',
       key: 'totalEarned',
       render: (earned: number) => (
-        <span className="font-medium text-blue-600">{earned.toLocaleString()} PEPE</span>
+        <span className="font-medium text-blue-600">{earned.toLocaleString()} pts</span>
       ),
     },
     {

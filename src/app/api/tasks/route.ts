@@ -2,23 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Task from '@/models/Task';
 import User from '@/models/User';
-import Activity from '@/models/Activity';
+ 
 import { decrypt } from '@/lib/authlib';
 
 // GET /api/tasks - Get available tasks for users
-export async function   GET(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
     const hash = searchParams.get('hash');
 
-    
+
 
     if (!hash) {
       return NextResponse.json({ error: 'Telegram ID is required' }, { status: 400 });
     }
-const telegramId = decrypt(hash as  string);
+    const telegramId = decrypt(hash as string);
     // Get user to check completed tasks
     const user = await User.findOne({ telegramId });
     if (!user) {
@@ -26,18 +26,14 @@ const telegramId = decrypt(hash as  string);
     }
 
     // Get all active tasks
-    const tasks = await Task.find({ 
+    const tasks = await Task.find({
       status: 'active',
-       
+
     }).sort({ createdAt: -1 });
 
     // Get task completion statistics from Activity model
     const tasksWithStatus = await Promise.all(tasks.map(async (task) => {
-      // Get completion count for this specific task from Activity model
-      const taskCompletions = await Activity.countDocuments({
-        type: 'task_complete',
-        'metadata.taskId': task.id
-      });
+
 
       return {
         id: task.id,
@@ -49,16 +45,12 @@ const telegramId = decrypt(hash as  string);
         url: task.url,
         duration: task.duration,
         completed: user.joinedBonusTasks.includes(task.id),
-        progress: {
-          current: taskCompletions,
-          max: task.maxCompletions,
-          percentage: (taskCompletions / task.maxCompletions) * 100
-        }
+
       };
     }));
 
     // Get user's task status
- 
+
     const taskStatus = {
       completedTasks: user.joinedBonusTasks,
       tasksCompletedToday: user.tasksCompletedToday,

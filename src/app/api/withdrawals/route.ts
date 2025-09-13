@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
  
 
     // Estimate gas for the transfer
-    const gasEstimate = await ERC20Service.estimateGas({
+   /*  const gasEstimate = await ERC20Service.estimateGas({
       tokenAddress: contractAddress,
       toAddress: address,
       amount: amount.toString(),
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to estimate gas for transaction' },
         { status: 500 }
       );
-    }
+    } */
     
   
     
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
       memo: memo || '',
       networkFee,
       // Set initial status based on transfer type
-      status: 'pending'
+      status: 'processing'
     });
     
     await withdrawal.save();
@@ -223,19 +223,19 @@ export async function POST(request: NextRequest) {
     
     try {
       // Execute the ERC20 transfer
-      transferResult = await ERC20Service.transferToken({
+      /* transferResult = await ERC20Service.transferToken({
         tokenAddress: contractAddress,
         toAddress: address,
         amount: amount.toString(),
         network: network,
         gasLimit: gasEstimate.gasLimit,
         gasPrice: gasEstimate.gasPrice
-      });
+      }); */
       
       if (transferResult.success) {
           
-        withdrawal.status = 'completed';
-        withdrawal.transactionId = transferResult.transactionHash ||  `TXN${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}` //'transferResult.transactionHash;'
+        withdrawal.status = 'processing';
+        ///withdrawal.transactionId = transferResult.transactionHash ||  `TXN${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}` //'transferResult.transactionHash;'
         withdrawal.updatedAt = new Date();
         await withdrawal.save();
       } else {

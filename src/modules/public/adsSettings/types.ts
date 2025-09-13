@@ -3,8 +3,8 @@ export interface AdsSettings {
   _id?: string;
   enableGigaPubAds: boolean;
   gigaPubAppId : string;
-  enableMonetag : boolean;
-  monetagAppId : string;
+  monetagEnabled : boolean;
+  monetagZoneId : string;
   adsWatchLimit : number;
   defaultAdsReward : number;
   vpnNotAllowed: boolean;

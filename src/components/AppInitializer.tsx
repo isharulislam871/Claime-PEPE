@@ -54,20 +54,7 @@ export default function AppInitializer({
           return;
         }
       }
-
-      // Fetch ads settings
-      const adsResponse = await fetch('/api/ads/settings');
-      if (adsResponse.ok) {
-        const adsData = await adsResponse.json();
-        if (adsData.success) {
-          setAdsSettings(adsData.data);
-          
-          // Check VPN if vpnNotAllowed is enabled
-          if (adsData.data.vpnNotAllowed) {
-            await checkVpnStatus();
-          }
-        }
-      }
+ 
 
       const webApp = window.Telegram?.WebApp;
       

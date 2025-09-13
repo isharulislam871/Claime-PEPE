@@ -243,12 +243,12 @@ async function sendWebAppButton(bot: TelegramBot, chatId: number) {
   }
   
   await bot.sendMessage(chatId, 
-    `🚀 Open  ${botConfig?.username.replace(/_?bot$/, "")} Mini App to start earning!`, 
+    `🚀 Open  ${botConfig?.username?.replace(/_?bot$/, "") || 'TaskUp'} Mini App to start earning!`, 
     {
       reply_markup: {
         inline_keyboard: [[
           {
-            text: `📱 Open  ${botConfig?.username.replace(/_?bot$/, "")}`,
+            text: `📱 Open  ${botConfig?.username?.replace(/_?bot$/, "") || 'TaskUp'}`,
             web_app: { url: webAppUrl }
           }
         ]]
@@ -283,7 +283,7 @@ async function handleReferralCommand(bot: TelegramBot, chatId: number, userId: s
           inline_keyboard: [[
             {
               text: '📤 Share Referral Link',
-              url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(` 🚀 Join  ${botInfo?.username.replace(/_?bot$/, "")} and earn crypto by completing simple tasks! `)}`
+              url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(` 🚀 Join  ${botInfo?.username?.replace(/_?bot$/, "") || 'TaskUp'} and earn crypto by completing simple tasks! `)}`
             }
           ]]
         }

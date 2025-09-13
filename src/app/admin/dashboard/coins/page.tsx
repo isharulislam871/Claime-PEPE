@@ -60,6 +60,11 @@ export interface Coin {
   description?: string;
   website?: string;
   coinGeckoId?: string;
+  minWithdrawal?: number;
+  networkFee?: number;
+  currentPrice?: number;
+  priceChange24h?: number;
+  lastPriceUpdate?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -71,6 +76,7 @@ export default function CoinsPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCoin, setEditingCoin] = useState<Coin | null>(null);
   const [seedLoading, setSeedLoading] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(false);
   const [selectedNetwork, setSelectedNetwork] = useState<string>('all');
   const [form] = Form.useForm();
 
@@ -120,6 +126,28 @@ export default function CoinsPage() {
       toast.error('Failed to seed coins');
     } finally {
       setSeedLoading(false);
+    }
+  };
+
+  const handleFetchPrices = async () => {
+    setPriceLoading(true);
+    try {
+      const response = await fetch('/api/admin/coins/prices', {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch prices');
+      }
+      
+      const data = await response.json();
+      toast.success(`Prices updated for ${data.updated} coins`);
+      await fetchCoins(); // Refresh data
+    } catch (error) {
+      console.error('Error fetching prices:', error);
+      toast.error('Failed to fetch prices');
+    } finally {
+      setPriceLoading(false);
     }
   };
 
@@ -311,6 +339,67 @@ export default function CoinsPage() {
       )
     },
     {
+      title: 'Price',
+      key: 'price',
+      width: 150,
+      render: (record: Coin) => (
+        <div>
+          {record.currentPrice ? (
+            <>
+              <div style={{ fontWeight: 'bold' }}>
+                ${record.currentPrice.toFixed(6)}
+              </div>
+              {record.priceChange24h !== undefined && (
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: record.priceChange24h >= 0 ? '#52c41a' : '#ff4d4f' 
+                }}>
+                  {record.priceChange24h >= 0 ? '+' : ''}{record.priceChange24h.toFixed(2)}%
+                </div>
+              )}
+              {record.lastPriceUpdate && (
+                <div style={{ fontSize: '10px', color: '#999' }}>
+                  {new Date(record.lastPriceUpdate).toLocaleTimeString()}
+                </div>
+              )}
+            </>
+          ) : (
+            <Tag color="default">No Price</Tag>
+          )}
+        </div>
+      )
+    },
+    {
+      title: 'Min Withdrawal',
+      dataIndex: 'minWithdrawal',
+      key: 'minWithdrawal',
+      width: 120,
+      render: (minWithdrawal: number, record: Coin) => (
+        minWithdrawal ? (
+          <Tag color="blue">
+            {minWithdrawal} {record.symbol}
+          </Tag>
+        ) : (
+          <Tag color="default">Not Set</Tag>
+        )
+      )
+    },
+    {
+      title: 'Network Fee',
+      dataIndex: 'networkFee',
+      key: 'networkFee',
+      width: 120,
+      render: (networkFee: number, record: Coin) => (
+        networkFee ? (
+          <Tag color="orange">
+            {networkFee} {record.symbol}
+          </Tag>
+        ) : (
+          <Tag color="default">Not Set</Tag>
+        )
+      )
+    },
+    {
       title: 'Status',
       dataIndex: 'isActive',
       key: 'isActive',
@@ -395,6 +484,13 @@ export default function CoinsPage() {
               loading={seedLoading}
             >
               Seed Popular Coins
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleFetchPrices}
+              loading={priceLoading}
+            >
+              Fetch Prices
             </Button>
             <Button 
               type="primary"
@@ -550,6 +646,35 @@ export default function CoinsPage() {
                 label="CoinGecko ID"
               >
                 <Input placeholder="bitcoin" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="minWithdrawal"
+                label="Minimum Withdrawal"
+              >
+                <InputNumber
+                  min={0}
+                  step={0.01}
+                  placeholder="0.1"
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="networkFee"
+                label="Network Fee"
+              >
+                <InputNumber
+                  min={0}
+                  step={0.01}
+                  placeholder="0.03"
+                  style={{ width: '100%' }}
+                />
               </Form.Item>
             </Col>
           </Row>

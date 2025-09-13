@@ -70,14 +70,39 @@ class ERC20Service {
  
 
   private async getProvider(network: string = "eth-main"): Promise<ethers.JsonRpcProvider> {
-    const fallbackNode = await RpcNode.findOne({
-      network,
-      isActive: true,
-      status: { $in: ["online"] },
-    }) 
-  
-     
-    return new ethers.JsonRpcProvider(fallbackNode.url);
+    try {
+      await connectDB();
+      
+      const fallbackNode = await RpcNode.findOne({
+        network,
+        isActive: true,
+        status: { $in: ["online"] },
+      });
+      
+      if (!fallbackNode || !fallbackNode.url) {
+        console.warn(`No active RPC node found for network: ${network}, using fallback URLs`);
+        
+        // Fallback URLs for different networks
+        const fallbackUrls: { [key: string]: string } = {
+          'eth-main': 'https://eth-mainnet.g.alchemy.com/v2/demo',
+          'sepolia': 'https://eth-sepolia.g.alchemy.com/v2/demo',
+          'bsc-mainnet': 'https://bsc-dataseed.binance.org/',
+          'bsc-testnet': 'https://data-seed-prebsc-1-s1.binance.org:8545/'
+        };
+        
+        const fallbackUrl = fallbackUrls[network];
+        if (!fallbackUrl) {
+          throw new Error(`No fallback URL available for network: ${network}`);
+        }
+        
+        return new ethers.JsonRpcProvider(fallbackUrl);
+      }
+      
+      return new ethers.JsonRpcProvider(fallbackNode.url);
+    } catch (error) {
+      console.error('Error getting provider:', error);
+      throw new Error(`Failed to get provider for network: ${network}`);
+    }
   }
 
   private async getConnectedWallet(network: string = 'eth-main'): Promise<ethers.Wallet> {

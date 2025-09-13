@@ -7,8 +7,6 @@ import Activity from '@/models/Activity';
 
 import { decrypt } from '@/lib/authlib';
 
-
-
 // POST /api/users - Create new user with random referral code
 export async function POST(request: NextRequest) {
   try {
@@ -154,8 +152,8 @@ export async function POST(request: NextRequest) {
       const referrer = await User.findOne({ referralCode: referredBy });
       if (referrer) {
         referrer.referralCount += 1;
-        referrer.balance += 500; // Bonus for referrer
-        referrer.referralEarnings += 500
+        referrer.balance += 400; // Bonus for referrer
+        referrer.referralEarnings += 400
         await referrer.save();
 
       }

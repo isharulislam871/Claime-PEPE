@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Authentication is handled by middleware
 
     const body = await request.json();
-    const { address, type, currency, network = 'mainnet', status = 'active', privateKey, mnemonic } = body;
+    const { address, type, currency, network = 'eth-main', status = 'active', privateKey, mnemonic } = body;
 
     // Validation
     if (!address || !type || !currency) {

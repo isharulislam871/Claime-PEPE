@@ -16,6 +16,7 @@ import { taskReducer } from './private/task';
 import { coinReducer } from './private/coin';
 import { botReducer } from './private/bot';
 import { walletReducer } from './private/wallet';
+import { dailyCheckInReducer } from './private/dailyCheckIn';
 
 // Create saga middleware
 const sagaMiddleware = createSagaMiddleware();
@@ -29,6 +30,7 @@ const privateReducers = combineReducers({
   activity: activityReducer,
   bot: botReducer,
   wallet: walletReducer,
+  dailyCheckIn: dailyCheckInReducer,
 });
 
 // Combine public reducers

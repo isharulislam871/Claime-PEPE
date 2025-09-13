@@ -308,7 +308,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
           </Card>
 
           {/* VPN Security Settings */}
-          <Card 
+        {/*   <Card 
             title={
               <Space>
                 <SecurityScanOutlined className="text-red-600" />
@@ -505,7 +505,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
                 </Text>
               </div>
             </Space>
-          </Card>
+          </Card> */}
 
           {/* Action Buttons */}
           <Card className="shadow-sm border-gray-200">
@@ -521,14 +521,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
                 >
                   Save Ads Configuration
                 </Button>
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={handleResetSettings}
-                  size="large"
-                  className="border-gray-300 hover:border-purple-400 hover:text-purple-600 rounded-lg px-8"
-                >
-                  Reset to Defaults
-                </Button>
+                 
               </Space>
             </Space>
           </Card>

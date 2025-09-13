@@ -27,6 +27,11 @@ export interface User {
   telegramId?: string;
   lastSpinDate?: string;
   referralCode?: string;
+  // Daily Check-in fields
+  dailyCheckInStreak?: number;
+  totalCheckIns?: number;
+  lastCheckInDate?: string;
+  dailyCheckInRewardEarned?: number;
 }
 
 export interface SpinWheelState {

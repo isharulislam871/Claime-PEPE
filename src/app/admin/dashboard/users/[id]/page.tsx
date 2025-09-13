@@ -136,7 +136,7 @@ export default function UserDetailsPage() {
             <Statistic
               title="Current Balance"
               value={user.balance}
-              suffix="PEPE"
+              suffix="pts"
               valueStyle={{ color: '#52c41a' }}
               prefix={<WalletOutlined />}
             />
@@ -147,7 +147,7 @@ export default function UserDetailsPage() {
             <Statistic
               title="Total Earned"
               value={user.totalEarned}
-              suffix="PEPE"
+              suffix="pts"
               valueStyle={{ color: '#1890ff' }}
               prefix={<TrophyOutlined />}
             />
@@ -238,7 +238,7 @@ export default function UserDetailsPage() {
             <div className="bg-green-50 p-6 rounded-lg text-center">
               <div className="text-green-800 font-semibold mb-2">Total Earnings</div>
               <div className="text-3xl font-bold text-green-600">
-                {user.totalEarned.toLocaleString()} PEPE
+                {user.totalEarned.toLocaleString()} pts
               </div>
               <div className="text-sm text-green-600 mt-1">
                 Lifetime earnings from all activities
@@ -249,7 +249,7 @@ export default function UserDetailsPage() {
             <div className="bg-blue-50 p-6 rounded-lg text-center">
               <div className="text-blue-800 font-semibold mb-2">Current Balance</div>
               <div className="text-3xl font-bold text-blue-600">
-                {user.balance.toLocaleString()} PEPE
+                {user.balance.toLocaleString()} pts
               </div>
               <div className="text-sm text-blue-600 mt-1">
                 Available for withdrawal
@@ -260,7 +260,7 @@ export default function UserDetailsPage() {
             <div className="bg-purple-50 p-6 rounded-lg text-center">
               <div className="text-purple-800 font-semibold mb-2">Referral Earnings</div>
               <div className="text-3xl font-bold text-purple-600">
-                {user.referralEarnings.toLocaleString()} PEPE
+                {user.referralEarnings.toLocaleString()} pts
               </div>
               <div className="text-sm text-purple-600 mt-1">
                 Earned from {user.referralCount} referrals

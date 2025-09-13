@@ -347,7 +347,7 @@ export default function WithdrawalsPage() {
         </Card>
         <Card className="text-center">
           <div className="text-2xl font-bold text-purple-600">{totalCompletedAmount.toLocaleString()}</div>
-          <div className="text-gray-500">Total PEPE</div>
+          <div className="text-gray-500">Total USDT</div>
         </Card>
       </div>
 

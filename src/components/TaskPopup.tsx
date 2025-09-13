@@ -6,6 +6,9 @@ import { CloseOutline, CheckCircleOutline, RightOutline, StarOutline } from 'ant
 import { UnorderedListOutlined,  TwitterOutlined, YoutubeOutlined, InstagramOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { Button } from 'antd';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectTasks } from '@/modules/private/task/selectors';
+import { fetchTasksRequest, completeTaskRequest } from '@/modules/private/task';
 
 interface TaskPopupProps {
   isOpen: boolean;
@@ -13,18 +16,7 @@ interface TaskPopupProps {
   onTaskCompleted?: (taskId: string, reward: number) => void;
 }
 
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  reward: number;
-  type: 'telegram' | 'twitter' | 'youtube' | 'instagram' | 'website';
-  url: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  estimatedTime: string;
-  completed: boolean;
-  verificationRequired: boolean;
-}
+import { Task } from '@/modules/private/task/types';
 
 interface TaskProgress {
   taskId: string;
@@ -34,32 +26,18 @@ interface TaskProgress {
 }
 
 export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopupProps) {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const dispatch = useDispatch();
+  const tasks = useSelector(selectTasks);
   const [taskProgress, setTaskProgress] = useState<{ [key: string]: TaskProgress }>({});
   const [verifyingTask, setVerifyingTask] = useState<string | null>(null);
   const [verificationProgress, setVerificationProgress] = useState(0);
 
   useEffect(() => {
-    // Initialize tasks
-    const initialTasks: Task[] = []
-
-    
-    // Load saved progress
-    const savedProgress = localStorage.getItem('taskProgress');
-    if (savedProgress) {
-      const progress = JSON.parse(savedProgress);
-      setTaskProgress(progress);
-      
-      // Update task completion status
-      const updatedTasks = initialTasks.map(task => ({
-        ...task,
-        completed: progress[task.id]?.verified || false
-      }));
-      setTasks(updatedTasks);
-    } else {
-      setTasks(initialTasks);
+    if (isOpen) {
+      // Fetch tasks from Redux
+      dispatch(fetchTasksRequest());
     }
-  }, [isOpen]);
+  }, [isOpen, dispatch]);
 
   function TelegramOutlined({ className = "", ...props }: React.SVGProps<SVGSVGElement>) {
     return (
@@ -106,20 +84,20 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'success';
-      case 'medium': return 'warning';
-      case 'hard': return 'danger';
+  const getDifficultyColor = (type: string) => {
+    switch (type) {
+      case 'daily': return 'success';
+      case 'social': return 'warning';
+      case 'special': return 'danger';
       default: return 'primary';
     }
   };
 
-  const getDifficultyIcon = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return '⭐';
-      case 'medium': return '⭐⭐';
-      case 'hard': return '⭐⭐⭐';
+  const getDifficultyIcon = (type: string) => {
+    switch (type) {
+      case 'daily': return '⭐';
+      case 'social': return '⭐⭐';
+      case 'special': return '⭐⭐⭐';
       default: return '⭐';
     }
   };
@@ -183,12 +161,8 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
       setTaskProgress(newProgress);
       localStorage.setItem('taskProgress', JSON.stringify(newProgress));
 
-      // Update task completion status
-      setTasks(prevTasks => 
-        prevTasks.map(t => 
-          t.id === task.id ? { ...t, completed: true } : t
-        )
-      );
+      // Dispatch Redux action to complete the task
+      dispatch(completeTaskRequest(task.id));
 
       // Call callback if provided
       if (onTaskCompleted) {
@@ -245,60 +219,7 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-4">
-          {/* Progress Summary */}
-          <Card className="mb-4 bg-gradient-to-br from-blue-500 to-purple-600">
-            <div className="p-4 text-black">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <UnorderedListOutlined className="text-2xl text-black" />
-                </div>
-                
-                <div className="flex-1">
-                  <div className="text-lg font-bold mb-1 text-black ">
-                    Task Progress
-                  </div>
-                  <div className="text-sm text-black/80">
-                    {tasks.length > 0 ? `${getCompletedTasksCount()} of ${tasks.length} tasks completed` : 'No tasks available'}
-                  </div>
-                </div>
-
-                <Badge 
-                  content={`${getCompletedTasksCount()}/${tasks.length}`}
-                  color="warning"
-                />
-              </div>
-
-              <div className="mb-4">
-                <ProgressBar
-                  percent={tasks.length > 0 ? (getCompletedTasksCount() / tasks.length) * 100 : 0}
-                  className="mb-2"
-                />
-                <div className="text-xs text-black/80 text-center">
-                  {getTotalRewards()} points earned from completed tasks
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center p-3 text-black/10 rounded-lg">
-                  <div className="text-xl font-bold text-black">
-                    {getCompletedTasksCount()}
-                  </div>
-                  <div className="text-xs text-black/80">
-                    Completed
-                  </div>
-                </div>
-
-                <div className="text-center p-3 bg-white/10 rounded-lg">
-                  <div className="text-xl font-bold text-black">
-                    {getTotalRewards()}
-                  </div>
-                  <div className="text-xs text-black/80">
-                    Points Earned
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
+         
 
           {/* Task List */}
           <Card title="Available Tasks" className="mb-4">
@@ -330,10 +251,10 @@ export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopu
                       
                       <div className="flex items-center gap-2 mb-3 flex-wrap">
                         <Badge 
-                          content={getDifficultyIcon(task.difficulty)} 
-                          color={getDifficultyColor(task.difficulty)}
+                          content={getDifficultyIcon(task.type)} 
+                          color={getDifficultyColor(task.type)}
                         />
-                        <Badge content={task.estimatedTime} color="primary" />
+                        <Badge content={task.duration || '5 min'} color="primary" />
                         <Badge content={`+${task.reward} pts`} color="success" />
                       </div>
 

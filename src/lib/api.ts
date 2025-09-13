@@ -262,8 +262,12 @@ export const mockTelegramUser = {
 
 // Get current user from Telegram WebApp or mock data
 export function getCurrentUser() {
-  // In production, this would get data from Telegram WebApp
-  // For development, return mock data
+  // If in development mode, always return mock data
+  if (process.env.NODE_ENV === 'development') {
+    return mockTelegramUser;
+  }
+  
+  // In production, get data from Telegram WebApp
   if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
     const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
     const start_param = window.Telegram.WebApp.initDataUnsafe?.start_param;
@@ -278,6 +282,5 @@ export function getCurrentUser() {
     };
   }
   
-  // Return mock data for development
-  return mockTelegramUser;
+ 
 }

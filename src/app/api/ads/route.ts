@@ -138,13 +138,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Ads settings not configured' }, { status: 500 });
     }
 
-    // Check if ads are enabled
-    if (!adsSettings.enableGigaPubAds) {
-      return NextResponse.json({ 
-        error: 'Ads are currently disabled',
-        enabled: false
-      }, { status: 400 });
-    }
+    
     
     // Find user
     const user = await User.findByTelegramId(telegramId);

@@ -1,47 +1,55 @@
 'use client';
 
+import { selectAdsSettings } from '@/modules';
 import Script from 'next/script';
+import { useSelector } from 'react-redux';
 
-interface AdsSettings {
-  enableGigaPubAds: boolean;
-  gigaPubAppId: string;
-  defaultAdsReward: number;
-  adsWatchLimit: number;
-  adsRewardMultiplier: number;
-  minWatchTime: number;
-  vpnRequired: boolean;
-  vpnNotAllowed: boolean;
-}
+export default function AdsScriptLoader() {
+  const AdsSettings = useSelector(selectAdsSettings);
 
-interface AdsScriptLoaderProps {
-  adsSettings: AdsSettings | null;
-  vpnDetected: boolean;
-}
-
-export default function AdsScriptLoader({ adsSettings, vpnDetected }: AdsScriptLoaderProps) {
-  if (!adsSettings?.enableGigaPubAds || !adsSettings?.gigaPubAppId || vpnDetected) {
+  // Don't load scripts if ads are disabled or no settings available
+  if (!AdsSettings) {
     return null;
   }
 
   return (
+    <>
+      {/* GigaPub Ads Script */}
+      {AdsSettings.enableGigaPubAds && AdsSettings.gigaPubAppId && (
+        <Script
+          src={`https://ad.gigapub.tech/script?id=${AdsSettings.gigaPubAppId}`}
+          strategy="afterInteractive"
+          onLoad={() => {
+            console.log('GigaPub ads script loaded successfully');
+          }}
+          onError={(e) => {
+            console.error('Failed to load GigaPub ads script:', e);
+          }}
+        />
+      )}
 
-    <> 
-    
-    <Script
-      src={`https://ad.gigapub.tech/script?id=${adsSettings.gigaPubAppId}`}
-      strategy="afterInteractive"
-      onLoad={() => {
-        console.log('GigaPub ads script loaded successfully');
-      }}
-      onError={(e) => {
-        console.error('Failed to load GigaPub ads script:', e);
-      }}
-    />
-
-      <Script src='//libtl.com/sdk.js' data-zone='9827587' data-sdk='show_9827587'   onLoad={() => {
-        console.log('Monetag  ads script loaded successfully');
-      }}/>
+      {/* Monetag Ads Script */}
+      {AdsSettings.monetagEnabled && AdsSettings.monetagZoneId && (
+        <Script
+          src="//libtl.com/sdk.js"
+          data-zone={AdsSettings.monetagZoneId}
+          data-sdk={`show_${AdsSettings.monetagZoneId}`}
+          strategy="afterInteractive"
+          onLoad={() => {
+            console.log('Monetag ads script loaded successfully');
+            // Ensure the function is available before calling
+            const functionName = `show_${AdsSettings.monetagZoneId}`;
+            if (typeof window !== 'undefined' && window[functionName as keyof Window]) {
+              console.log(`Monetag function ${functionName} is available`);
+            } else {
+              console.warn(`Monetag function ${functionName} not found on window`);
+            }
+          }}
+          onError={(e) => {
+            console.error('Failed to load Monetag ads script:', e);
+          }}
+        />
+      )}
     </>
-
   );
 }

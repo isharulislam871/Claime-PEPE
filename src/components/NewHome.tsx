@@ -41,7 +41,13 @@ import {
   SwapOutlined,
   CheckCircleOutlined,
   PlayCircleOutlined,
-  UnorderedListOutlined
+  UnorderedListOutlined,
+  CustomerServiceOutlined,
+  StarOutlined,
+  ShoppingOutlined,
+  CreditCardOutlined,
+  CrownOutlined,
+  MoneyCollectOutlined
 } from '@ant-design/icons';
 import { Avatar } from 'antd';
 import NewProfile from './NewProfile';
@@ -54,6 +60,13 @@ import NewSwap from './NewSwap';
 import DailyCheckInPopup from './DailyCheckInPopup';
 import AdWatchPopup from './AdWatchPopup';
 import TaskPopup from './TaskPopup';
+ 
+import NewRegistrationBlockedPopup from './NewRegistrationBlockedPopup';
+import MinimumInvitesRequiredPopup from './MinimumInvitesRequiredPopup';
+import SuspendAllPaymentServicesPopup from './SuspendAllPaymentServicesPopup';
+import RewardsPopup from './RewardsPopup';
+import ShopPopup from './ShopPopup';
+import LeaderboardPopup from './LeaderboardPopup';
 
 
 
@@ -92,7 +105,17 @@ export default function NewHome() {
   const [isTaskPopupOpen, setIsTaskPopupOpen] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const [showClaimSheet, setShowClaimSheet] = useState(false);
-
+  const [isTelegramOpenPopupVisible, setIsTelegramOpenPopupVisible] = useState(false);
+  const [isRegistrationBlockedPopupVisible, setIsRegistrationBlockedPopupVisible] = useState(false);
+  const [newRegistrationsEnabled, setNewRegistrationsEnabled] = useState(true);
+  const [isMinimumInvitesPopupVisible, setIsMinimumInvitesPopupVisible] = useState(false);
+  const [isPaymentSuspendedPopupVisible, setIsPaymentSuspendedPopupVisible] = useState(false);
+  const [paymentServicesSuspended, setPaymentServicesSuspended] = useState(false);
+  const [isRewardsPopupVisible, setIsRewardsPopupVisible] = useState(false);
+  const [isShopPopupVisible, setIsShopPopupVisible] = useState(false);
+  const [isVoucherPopupVisible, setIsVoucherPopupVisible] = useState(false);
+  const [isLeaderboardPopupVisible, setIsLeaderboardPopupVisible] = useState(false);
+  const [isEarningCenterPopupVisible, setIsEarningCenterPopupVisible] = useState(false);
 
   const quickActions: QuickAction[] = [
     {
@@ -121,14 +144,30 @@ export default function NewHome() {
       title: 'Earn Points',
       icon: <DollarOutlined className="text-yellow-600 text-xl" />,
       color: 'bg-yellow-100',
-      action: () => setIsEarn(true)
+      action: () => toast.info(`Soon`)
     },
     {
       id: 'withdraw',
       title: 'Withdraw',
       icon: <WalletOutlined className="text-purple-600 text-xl" />,
       color: 'bg-purple-100',
-      action: () => setIsOpenWithdraw(true)
+      action: () => {
+        // Check if payment services are suspended
+        if (paymentServicesSuspended) {
+          setIsPaymentSuspendedPopupVisible(true);
+          return;
+        }
+        
+        // Check if user meets minimum invite requirement
+        const requiredInvites = 10; // This should come from admin settings
+        const currentInvites = user?.referralCount || 0;
+        
+        if (currentInvites < requiredInvites) {
+          setIsMinimumInvitesPopupVisible(true);
+        } else {
+          setIsOpenWithdraw(true);
+        }
+      }
     },
     {
       id: 'invite',
@@ -157,6 +196,48 @@ export default function NewHome() {
       icon: <TrophyOutlined className="text-orange-600 text-xl" />,
       color: 'bg-orange-100',
       action: () => setIsOpenProfile(true)
+    },
+    {
+      id: 'support',
+      title: 'Support',
+      icon: <CustomerServiceOutlined className="text-blue-500 text-xl" />,
+      color: 'bg-blue-50',
+      action: () => toast.info('Support chat coming soon!')
+    },
+    {
+      id: 'rewards',
+      title: 'Rewards',
+      icon: <StarOutlined className="text-yellow-500 text-xl" />,
+      color: 'bg-yellow-50',
+      action: () => setIsRewardsPopupVisible(true)
+    },
+    {
+      id: 'shop',
+      title: 'Shop',
+      icon: <ShoppingOutlined className="text-green-500 text-xl" />,
+      color: 'bg-green-50',
+      action: () => setIsShopPopupVisible(true)
+    },
+    {
+      id: 'voucher',
+      title: 'Voucher',
+      icon: <CreditCardOutlined className="text-purple-500 text-xl" />,
+      color: 'bg-purple-50',
+      action: () => setIsVoucherPopupVisible(true)
+    },
+    {
+      id: 'leaderboard',
+      title: 'Leaderboard',
+      icon: <CrownOutlined className="text-amber-500 text-xl" />,
+      color: 'bg-amber-50',
+      action: () => setIsLeaderboardPopupVisible(true)
+    },
+    {
+      id: 'earning-center',
+      title: 'Earning Center',
+      icon: <MoneyCollectOutlined className="text-emerald-600 text-xl" />,
+      color: 'bg-emerald-100',
+      action: () => setIsEarningCenterPopupVisible(true)
     }
   ];
 
@@ -212,6 +293,53 @@ export default function NewHome() {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      dispatch(createUserRequest({}));
+    }
+  }, [dispatch, user]);
+
+  // Check registration and payment status on component mount
+  useEffect(() => {
+    const checkSystemStatus = async () => {
+      try {
+        // Simulate API call to check admin settings
+        // In a real app, this would be an API call to your admin settings
+        const response = await fetch('/api/admin/settings');
+        if (response.ok) {
+          const settings = await response.json();
+          setNewRegistrationsEnabled(settings.newRegistrations);
+          setPaymentServicesSuspended(settings.suspendAllPaymentServices || false);
+          
+          // Show popup if registrations are disabled and user is new
+          if (!settings.newRegistrations && (!user || !user.id)) {
+            setIsRegistrationBlockedPopupVisible(true);
+          }
+        }
+      } catch (error) {
+        // Fallback: assume services are enabled if API fails
+        console.log('Could not check system status');
+      }
+    };
+
+    checkSystemStatus();
+  }, [user]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      const isInTelegram = typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if (!isInTelegram) {
+        setIsTelegramOpenPopupVisible(true);
+      }
+    }
+  }, []);
+
   return (
     <>
       <div className="min-h-screen bg-gray-50">
@@ -254,12 +382,12 @@ export default function NewHome() {
                 ) : (
                   <>
                     <Avatar
-                      src={user?.profilePicUrl || currentUser.profilePicUrl as any}
+                      src={user?.profilePicUrl || currentUser?.profilePicUrl as any}
                       className="border-2 border-black/30"
                     />
                     <div className="flex-1">
                       <h3 className="text-base font-bold mb-1 text-black">
-                        Hello, <span className="text-yellow-700">{user?.username || currentUser.username}</span>!
+                        Hello, <span className="text-yellow-700">{user?.username || currentUser?.username}</span>!
                       </h3>
                       <p className="text-sm text-black/80 mb-2">
                         Ready to earn some <span className="text-yellow-700 font-semibold">points</span> today?
@@ -367,6 +495,34 @@ export default function NewHome() {
       < DailyCheckInPopup isOpen={isDailyCheckInOpen} onClose={() => setIsDailyCheckInOpen(false)} />
       < AdWatchPopup isOpen={isAdWatchOpen} onClose={() => setIsAdWatchOpen(false)} />
       < TaskPopup isOpen={isTaskPopupOpen} onClose={() => setIsTaskPopupOpen(false)} />
+      < NewRegistrationBlockedPopup 
+        isOpen={isRegistrationBlockedPopupVisible} 
+        onClose={() => setIsRegistrationBlockedPopupVisible(false)} 
+      />
+      < MinimumInvitesRequiredPopup 
+        isOpen={isMinimumInvitesPopupVisible}
+        onClose={() => setIsMinimumInvitesPopupVisible(false)}
+        currentInvites={user?.referralCount || 0}
+        requiredInvites={10}
+        onInviteFriends={() => setIsInviteFriendsEarn(true)}
+      />
+      < SuspendAllPaymentServicesPopup 
+        isOpen={isPaymentSuspendedPopupVisible}
+        onClose={() => setIsPaymentSuspendedPopupVisible(false)}
+      />
+      < RewardsPopup 
+        isOpen={isRewardsPopupVisible}
+        onClose={() => setIsRewardsPopupVisible(false)}
+      />
+      < ShopPopup 
+        isOpen={isShopPopupVisible}
+        onClose={() => setIsShopPopupVisible(false)}
+      />
+      < LeaderboardPopup 
+        visible={isLeaderboardPopupVisible}
+        onClose={() => setIsLeaderboardPopupVisible(false)}
+      />
+     
     </>
   );
 }

@@ -13,6 +13,8 @@ export interface IAdsSettings extends Document {
   vpnapiKey: string;
   ipqualityKey: string;
   ip2locationKey: string;
+  monetagZoneId: string;
+  monetagEnabled: boolean;
   maxmindKey: string;
   createdAt: Date;
   updatedAt: Date;
@@ -57,21 +59,29 @@ const AdsSettingsSchema = new Schema<IAdsSettings>({
     max: 300,
     required: true
   },
+  monetagEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  monetagZoneId: {
+    type: String,
+    default: null
+  },
   vpnRequired: {
     type: Boolean,
     default: false,
-    required: true
+
   },
   vpnNotAllowed: {
     type: Boolean,
     default: true,
-    required: true
+
   },
   vpnProvider: {
     type: String,
     enum: ['vpnapi', 'ipqualityscore', 'ip2location', 'maxmind'],
     default: 'vpnapi',
-    required: true
+
   },
   vpnapiKey: {
     type: String,
@@ -95,11 +105,7 @@ const AdsSettingsSchema = new Schema<IAdsSettings>({
   }
 }, {
   timestamps: true,
-  collection: 'ads_settings'
 });
-
-// Ensure only one ads settings document exists
-AdsSettingsSchema.index({}, { unique: true });
 
 // Create or export the model
 const AdsSettings = mongoose.models.AdsSettings || mongoose.model<IAdsSettings>('AdsSettings', AdsSettingsSchema);

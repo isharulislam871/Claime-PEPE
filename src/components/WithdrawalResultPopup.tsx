@@ -164,7 +164,7 @@ export default function WithdrawalResultPopup({
                   <div className="text-blue-600 text-lg">⏳</div>
                   <div className="text-sm text-blue-800">
                     <div className="font-semibold mb-1">Transaction Processing</div>
-                    <div>Your {currency} withdrawal is being processed. This usually takes 5-15 minutes depending on network congestion.</div>
+                    <div>Your {currency} withdrawal is being processed. This usually takes 24-48 Hours depending on network congestion.</div>
                   </div>
                 </div>
               </div>

@@ -12,7 +12,7 @@ import { toast } from 'react-toastify';
 function* fetchWithdrawalsSaga( ): Generator<any, void, any> {
   try {
     const currentUser = getCurrentUser();
-    const hash = encrypt(currentUser.telegramId);
+    const hash = encrypt(currentUser?.telegramId as any);
 
      const{ response , status } : any = yield call(API_CALL, { url : '/withdrawals' , params : { hash }});
     if(status === 200){

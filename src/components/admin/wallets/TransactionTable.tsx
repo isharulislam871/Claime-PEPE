@@ -1,21 +1,13 @@
 import { Table, Button, Space, Tag, message } from 'antd';
 import { CopyOutlined, ReloadOutlined } from '@ant-design/icons';
- 
+import { Transaction } from '@/types/wallet';
 
-interface Transaction {
-  _id: string;
-  walletId: string;
+// Extended transaction interface for additional fields used in the table
+interface ExtendedTransaction extends Transaction {
   walletAddress?: string;
-  type: 'deposit' | 'withdrawal' | 'transfer';
-  amount: number;
-  currency: string;
-  network?: string;
-  status: 'pending' | 'completed' | 'failed';
-  txHash?: string;
   blockNumber?: number;
   fromAddress?: string;
   toAddress?: string;
-  createdAt: string;
 }
 
 interface TransactionTableProps {
@@ -69,7 +61,7 @@ export default function TransactionTable({ transactions, loading, onRefresh }: T
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount: number, record: Transaction) => (
+      render: (amount: number, record: ExtendedTransaction) => (
         <span className="font-semibold">
           {record.currency === 'PEPE' 
             ? amount.toLocaleString() 

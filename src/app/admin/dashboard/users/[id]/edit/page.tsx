@@ -240,7 +240,7 @@ export default function EditUserPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Financial Information</h3>
               
               <Form.Item
-                label="Current Balance (PEPE)"
+                label="Current Balance (pts)"
                 name="balance"
                 rules={[{ required: true, message: 'Balance is required' }]}
               >
@@ -253,7 +253,7 @@ export default function EditUserPage() {
               </Form.Item>
 
               <Form.Item
-                label="Total Earned (PEPE)"
+                label="Total Earned (pts)"
                 name="totalEarned"
                 rules={[{ required: true, message: 'Total earned is required' }]}
               >
@@ -266,7 +266,7 @@ export default function EditUserPage() {
               </Form.Item>
 
               <Form.Item
-                label="Referral Earnings (PEPE)"
+                label="Referral Earnings (pts)"
                 name="referralEarnings"
                 rules={[{ required: true, message: 'Referral earnings is required' }]}
               >

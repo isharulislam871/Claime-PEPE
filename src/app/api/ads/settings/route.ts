@@ -11,21 +11,10 @@ export async function GET(request: NextRequest) {
     
     // If no settings exist, create default settings
     if (!adsSettings) {
-      adsSettings = await AdsSettings.create({
-        enableGigaPubAds: true,
-        gigaPubAppId: '2441',
-        defaultAdsReward: 50,
-        adsWatchLimit: 10,
-        adsRewardMultiplier: 1.0,
-        minWatchTime: 30,
-        vpnRequired: false,
-        vpnNotAllowed: true,
-        vpnProvider: 'vpnapi',
-        vpnapiKey: '',
-        ipqualityKey: '',
-        ip2locationKey: '',
-        maxmindKey: ''
-      });
+      return NextResponse.json(
+        { success: false,  erorr : 'Not confingtions ads' },
+        { status: 500 }
+      );
     }
     
     return NextResponse.json({
@@ -33,7 +22,7 @@ export async function GET(request: NextRequest) {
       data: adsSettings
     });
   } catch (error) {
-    console.error('Error fetching ads settings:', error);
+   
     return NextResponse.json(
       { success: false, error: 'Failed to fetch ads settings' },
       { status: 500 }

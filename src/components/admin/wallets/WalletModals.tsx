@@ -6,20 +6,9 @@ import {
 } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { useState, useEffect } from 'react';
+import { Wallet } from '@/types/wallet';
 
 const { Option } = Select;
-
-interface Wallet {
-  _id: string;
-  address: string;
-  type: 'hot' | 'cold';
-  currency: string;
-  balance: number;
-  status: 'active' | 'inactive' | 'maintenance';
-  network?: string;
-  createdAt: string;
-  lastTransaction?: string;
-}
 
 interface WalletModalsProps {
   // Edit Modal
@@ -137,8 +126,9 @@ export default function WalletModals({
                 rules={[{ required: true, message: 'Please select network' }]}
               >
                 <Select placeholder="Select network">
-                  <Option value="mainnet">ETH Mainnet</Option>
-                  <Option value="bsc">BSC Mainnet</Option>
+                  <Option value="eth-main">ETH Mainnet</Option>
+                  <Option value="sepolia">Sepolia Testnet</Option>
+                  <Option value="bsc-mainnet">BSC Mainnet</Option>
                   <Option value="bsc-testnet">BSC Testnet</Option>
                 </Select>
               </Form.Item>
@@ -297,8 +287,9 @@ export default function WalletModals({
             rules={[{ required: true, message: 'Please select network' }]}
           >
             <Select placeholder="Select network">
-              <Option value="mainnet">ETH Mainnet</Option>
-              <Option value="bsc">BSC Mainnet</Option>
+              <Option value="eth-main">ETH Mainnet</Option>
+              <Option value="sepolia">Sepolia Testnet</Option>
+              <Option value="bsc-mainnet">BSC Mainnet</Option>
               <Option value="bsc-testnet">BSC Testnet</Option>
             </Select>
           </Form.Item>

@@ -24,7 +24,7 @@ import axios from 'axios';
 function* fetchTasksSaga(): Generator<Effect, void, unknown> {
   try {
     const currentUser = getCurrentUser();
-    const hash = encrypt(currentUser.telegramId);
+    const hash = encrypt(currentUser?.telegramId as string);
 
     const {response} : TypeApiPromise = (yield call(API_CALL, { url : '/tasks' , params : { hash}})) as any;
     yield put(fetchTasksSuccess(response?.result?.result?.tasks || [], response?.result?.result?.taskStatus || {}));
@@ -94,7 +94,7 @@ function* fetchAdsSaga(): Generator<Effect, void, unknown> {
   try {
     const currentUser = getCurrentUser();
     
-    const hash = encrypt(currentUser.telegramId);
+    const hash = encrypt(currentUser?.telegramId as string);
   
     const {response , status } : any = (yield call(API_CALL,{ url : '/ads' , params : { hash }})) as any;
     

@@ -12,35 +12,13 @@ import {
   KeyOutlined
 } from '@ant-design/icons';
 import { toast } from 'react-toastify';
+import { Wallet, Transaction } from '@/types/wallet';
 import WalletStatistics from '@/components/admin/wallets/WalletStatistics';
 import WalletTable from '@/components/admin/wallets/WalletTable';
 import TransactionTable from '@/components/admin/wallets/TransactionTable';
 import WalletModals from '@/components/admin/wallets/WalletModals';
 
 const { TabPane } = Tabs;
-
-export interface Wallet {
-  _id: string;
-  address: string;
-  type: 'hot' | 'cold';
-  currency: string;
-  balance: number;
-  status: 'active' | 'inactive' | 'maintenance';
-  network?: string;
-  createdAt: string;
-  lastTransaction?: string;
-}
-
-export interface Transaction {
-  _id: string;
-  walletId: string;
-  type: 'deposit' | 'withdrawal' | 'transfer';
-  amount: number;
-  currency: string;
-  status: 'pending' | 'completed' | 'failed';
-  txHash?: string;
-  createdAt: string;
-}
 
 export default function WalletsPage() {
   const [wallets, setWallets] = useState<Wallet[]>([]);

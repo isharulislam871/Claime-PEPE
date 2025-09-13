@@ -166,7 +166,7 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
     setShowConfirmation(false);
     setShowProcessing(true);
     const currentUser =  getCurrentUser()
-    const userId = encrypt(currentUser?.telegramId);
+    const userId = encrypt(currentUser?.telegramId as string);
     try {
       // Call the swap API
       const response = await fetch('/api/swap', {
