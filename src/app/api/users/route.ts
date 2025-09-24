@@ -4,9 +4,7 @@ import { generateUniqueReferralCode } from '@/lib/utils/referralCode';
 import { getClientIP } from '@/lib/utils/getClientIP';
 import User from '@/models/User';
 import Activity from '@/models/Activity';
-
-import { decrypt } from '@/lib/authlib';
-
+ 
 // POST /api/users - Create new user with random referral code
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
 
-    const decrypted = decrypt(hash as string);
+    const decrypted = hash
     const telegramId = decrypted.split(':')[0]
 
 

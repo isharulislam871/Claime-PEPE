@@ -10,7 +10,7 @@ import { composeWithDevTools } from '@redux-devtools/extension';
  
 // Root saga
 import { rootSaga } from './rootSaga';
-import { authReducer, adsSettingsReducer, rpcNodeReducer } from './public';
+import { authReducer, adsSettingsReducer, rpcNodeReducer, appReducer } from './public';
 import { userReducer, withdrawalsReducer, activityReducer } from './private';
 import { taskReducer } from './private/task';
 import { coinReducer } from './private/coin';
@@ -38,6 +38,7 @@ const publicReducers = combineReducers({
   auth: authReducer,
   adsSettings: adsSettingsReducer,
   rpcNodes: rpcNodeReducer,
+  app: appReducer,
 });
 
 // Root reducer

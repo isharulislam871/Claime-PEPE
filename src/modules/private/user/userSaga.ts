@@ -23,7 +23,7 @@ import {
   
 } from './actions';
 import { RootState } from '../../store';
-import { encrypt } from '@/lib/authlib';
+ 
 import { toast } from 'react-toastify';
 import { API_CALL, TypeApiPromise } from '@/lib/client';
 import { getCurrentUser } from '@/lib/api';
@@ -117,7 +117,7 @@ function* updateUserStatusSaga(action: ReturnType<typeof updateUserStatus>): Gen
 function* createUserSaga(action: ReturnType<typeof createUserRequest>): Generator {
   try {
     const userData = action.payload;
-    const hash = encrypt(userData.telegramId);
+    const hash = userData.telegramId
 
     const { response, status }: any = (yield call(API_CALL, {
       url: "/users",

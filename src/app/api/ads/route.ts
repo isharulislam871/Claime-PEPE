@@ -3,7 +3,7 @@ import connectToDatabase from '@/lib/mongodb';
 import User from '@/models/User';
 import Activity from '@/models/Activity';
 import AdsSettings from '@/models/AdsSettings';
-import { decrypt } from '@/lib/authlib';
+ 
 import { getClientIP } from '@/lib/utils/getClientIP';
 
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!hash) {
       return NextResponse.json({ error: 'Telegram ID is required' }, { status: 400 });
     }
-     const  telegramId   = decrypt(hash);
+     const  telegramId   = hash 
     await connectToDatabase();
     
     // Get ads settings
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Telegram ID is required' }, { status: 400 });
     }
 
-    const telegramId = decrypt(hash)
+    const telegramId = hash 
 
     await connectToDatabase();
     

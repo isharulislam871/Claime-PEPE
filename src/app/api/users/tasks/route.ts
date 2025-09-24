@@ -3,8 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import Activity from '@/models/Activity';
 import Task from '@/models/Task';
-import {  verifySignature , hashFingerprint , verifyFingerprint , signFingerprint  } from 'auth-fingerprint';
-
+ 
 // POST /api/users/tasks - Complete a task and update user balance
 export async function POST(request: NextRequest) {
 

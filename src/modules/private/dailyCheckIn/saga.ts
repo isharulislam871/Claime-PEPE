@@ -1,7 +1,7 @@
 import { call, put, takeEvery, select } from 'redux-saga/effects';
 import { DailyCheckInActionTypes } from './types';
-import { API_CALL  } from 'auth-fingerprint/api';
-import { hashFingerprint   } from 'auth-fingerprint';
+import { API_CALL , generateSignature  } from 'auth-fingerprint';
+ 
 import {
   fetchCheckInDataSuccess,
   fetchCheckInDataFailure,
@@ -30,13 +30,8 @@ const performCheckInAPI = async () => {
 function* fetchCheckInDataSaga(): Generator<any, void, any> {
   try {
     const currentUser = getCurrentUser();
-    const hash = hashFingerprint({ userId : currentUser?.telegramId }, 'app')
-    const  { response , status }= yield  call(API_CALL, { url : '/dailyCheckIn' , method : 'GET' ,  auth : {
-      enabled : true,
-      method : 'hash',
-      secret : 'app',
-    
-    }})
+    const hash = generateSignature(JSON.stringify({ userId : currentUser?.telegramId }), process.env.NEXTAUTH_SECRET || '')
+    const  { response , status }= yield  call(API_CALL, { url : '/dailyCheckIn' , method : 'GET'  })
     if(status === 200){
       yield put(fetchCheckInDataSuccess(response.data));
       return;

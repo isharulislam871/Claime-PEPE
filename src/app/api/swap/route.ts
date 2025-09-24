@@ -3,8 +3,7 @@ import User from '@/models/User';
 import History from '@/models/History';
 import UserWallet from '@/models/UserWallet';
 import mongoose from 'mongoose';
-import { decrypt } from '@/lib/authlib';
-
+ 
 interface SwapRequest {
   fromAmount: number;
   toCurrency: string;
@@ -38,7 +37,7 @@ export async function POST(request: NextRequest) {
     const body: SwapRequest = await request.json();
     const { fromAmount, toCurrency, toAmount , userId  } = body;
  
-    const telegramId = decrypt(userId);
+    const telegramId =  userId 
     // Validate input
     if (!fromAmount || !toCurrency || !toAmount || !userId) {
       return NextResponse.json({

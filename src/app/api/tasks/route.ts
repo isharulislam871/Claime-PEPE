@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Task from '@/models/Task';
 import User from '@/models/User';
- 
-import { decrypt } from '@/lib/authlib';
-
+  
 // GET /api/tasks - Get available tasks for users
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +16,7 @@ export async function GET(request: NextRequest) {
     if (!hash) {
       return NextResponse.json({ error: 'Telegram ID is required' }, { status: 400 });
     }
-    const telegramId = decrypt(hash as string);
+    const telegramId = hash
     // Get user to check completed tasks
     const user = await User.findOne({ telegramId });
     if (!user) {

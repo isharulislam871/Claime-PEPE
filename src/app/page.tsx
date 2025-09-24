@@ -12,20 +12,10 @@ import { createUserRequest,   fetchAdsSettingsRequest, fetchBotConfigRequest, se
 import NewHome from '@/components/NewHome';
 import TelegramOpenPopup from '@/components/TelegramOpenPopup';
 
-interface AdsSettings {
-  enableGigaPubAds: boolean;
-  gigaPubAppId: string;
-  defaultAdsReward: number;
-  adsWatchLimit: number;
-  adsRewardMultiplier: number;
-  minWatchTime: number;
-  vpnRequired: boolean;
-  vpnNotAllowed: boolean;
-}
+ 
 
 export default function Home() {
-  const [adsSettings, setAdsSettings] = useState<AdsSettings | null>(null);
-  const [vpnDetected, setVpnDetected] = useState(false);
+  
   const [showTelegramPopup, setShowTelegramPopup] = useState(false);
   const dispatch = useDispatch();
   
@@ -34,19 +24,7 @@ export default function Home() {
      dispatch(fetchBotConfigRequest())
   }, [dispatch])
 
-  const checkVpnStatus = async () => {
-    try {
-      const response = await fetch('/api/vpn/detect');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data.isVpn) {
-          setVpnDetected(true);
-        }
-      }
-    } catch (error) {
-      console.error('VPN check failed:', error);
-    }
-  };
+  
 
   // Check if user is in Telegram WebApp
   const checkTelegramStatus = () => {
@@ -69,29 +47,18 @@ export default function Home() {
       checkTelegramStatus();
   }, [ dispatch ])
 
-  
-  
-
+   
   return (
     <>
       {/* Initialize app and handle setup */}
-      <AppInitializer 
-        
-        setAdsSettings={setAdsSettings}
-        checkVpnStatus={checkVpnStatus}
-      />
+      <AppInitializer  />
 
       {/* Handle user status (ban/suspend) or render main app */}
       <UserStatusHandler>
         <div className="min-h-screen bg-gray-50 pb-20 overflow-hidden">
           {/* Load ads script conditionally */}
           <AdsScriptLoader />
-
-           
-          {/* <VpnManager 
-            vpnDetected={vpnDetected}
-            setVpnDetected={setVpnDetected}
-          /> */}
+ 
           {!showTelegramPopup && <NewHome />}
           <TelegramOpenPopup visible={showTelegramPopup} />
           

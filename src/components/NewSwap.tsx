@@ -18,7 +18,7 @@ import {
 import { SwapOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '@/modules';
-import { 
+import {
   selectCoins,
   selectPepeConversionRates,
   selectUsdRates
@@ -30,8 +30,9 @@ import SwapResultPopup from './SwapResultPopup';
 import SwapProcessingPopup from './SwapProcessingPopup';
 import SwapMaintenancePopup from './SwapMaintenancePopup';
 import { toast } from 'react-toastify';
-import { encrypt } from '@/lib/authlib';
+
 import { getCurrentUser } from '@/lib/api';
+import { API_CALL, generateSignature } from 'auth-fingerprint';
 
 interface NewSwapProps {
   isOpen: boolean;
@@ -64,7 +65,7 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false); // Toggle for testing
 
 
- 
+
   // Helper functions for CurrencySelection
   const getAvailableBalance = (currency: string): number => {
     // Convert user points to currency balance
@@ -82,21 +83,21 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
     return usdValue.toFixed(2);
   };
 
-   
+
 
   // Helper function to get coin icon from coins data
   const getCoinIcon = (currency: string): string => {
-    const coin = coins?.find(coin => 
+    const coin = coins?.find(coin =>
       coin.symbol?.toLowerCase() === currency.toLowerCase() ||
       coin.name?.toLowerCase() === currency.toLowerCase()
     );
-    return coin?.icon  || ''
+    return coin?.icon || ''
   };
 
- 
+
 
   const swapOptions: SwapOption[] = [
-     
+
     {
       label: 'USDT',
       value: 'usdt',
@@ -119,13 +120,13 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
       description: '~10,000 pts ≈ 25,600 PEPE (~$0.25)'
     }
   ];
-  
+
 
   const selectedOption = swapOptions.find(option => option.value === selectedCurrency.toLowerCase());
   const pointsToSwap = parseInt(fromAmount) || 0;
   const convertedAmount = pointsToSwap * (selectedOption?.rate || 0);
- 
-  
+
+
   const handleSwap = () => {
     // Check if maintenance mode is active
     if (isMaintenanceMode) {
@@ -165,8 +166,9 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
     setIsSwapping(true);
     setShowConfirmation(false);
     setShowProcessing(true);
-    const currentUser =  getCurrentUser()
-    const userId = encrypt(currentUser?.telegramId as string);
+    const currentUser = getCurrentUser()
+    const userId = currentUser?.telegramId
+
     try {
       // Call the swap API
       const response = await fetch('/api/swap', {
@@ -174,36 +176,31 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          fromAmount: pointsToSwap,
-          toCurrency: selectedCurrency,
-          toAmount: convertedAmount,
-          userId: userId
-        }),
-      });
 
+      });
+      const { } = API_CALL({ method: 'POST', url: '/api/swap', body: generateSignature(JSON.stringify({ telegramId: userId, fromAmount: pointsToSwap, toCurrency: selectedCurrency, toAmount: convertedAmount }), process.env.NEXTAUTH_SECRET || '') })
       const data = await response.json();
-      
+
       if (data.success) {
         setSwapSuccess(true);
         setErrorMessage('');
         setErrorCode('');
         setFromAmount(''); // Clear the form on success
-        
+
         // Show success toast
-      toast.success(`Swap completed! Transaction ID: ${data.transactionId}`)
+        toast.success(`Swap completed! Transaction ID: ${data.transactionId}`)
       } else {
         setSwapSuccess(false);
         setErrorMessage(data.message || 'Swap failed. Please try again.');
         setErrorCode(data.errorCode || 'UNKNOWN_ERROR');
-        
+
         // Show error toast
-        toast.error( data.message || 'Swap failed. Please try again.')
+        toast.error(data.message || 'Swap failed. Please try again.')
       }
-      
+
       setShowProcessing(false);
       setShowResult(true);
-      
+
     } catch (error) {
       console.error('Swap API error:', error);
       setSwapSuccess(false);
@@ -211,7 +208,7 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
       setErrorCode('NETWORK_ERROR');
       setShowProcessing(false);
       setShowResult(true);
-      
+
       Toast.show({
         content: 'Network error occurred',
         icon: 'fail',
@@ -248,7 +245,7 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold">Swap Points</h2>
-          <CloseOutline 
+          <CloseOutline
             className="text-gray-500 cursor-pointer"
             onClick={onClose}
           />
@@ -297,12 +294,12 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
                 className="mb-0"
                 defaultCurrency="USDT"
               />
- 
-           
+
+
             </Space>
           </Card>
 
-         
+
         </div>
 
         {/* Footer */}
@@ -314,16 +311,16 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
             onClick={handleSwap}
             loading={isSwapping}
             disabled={!fromAmount || pointsToSwap <= 0 || pointsToSwap > (user?.balance || 0)}
-            
+
           >
-            {  isSwapping 
-              ? 'Swapping...' 
+            {isSwapping
+              ? 'Swapping...'
               : `Swap ${pointsToSwap.toLocaleString()} Points`
             }
           </Button>
-          
-         
-          
+
+
+
           <div className="text-center mt-2">
             <div className="text-xs text-gray-500">
               Swaps are processed instantly • No fees applied
@@ -353,7 +350,7 @@ export default function NewSwap({ isOpen, onClose }: NewSwapProps) {
         toCurrency={selectedCurrency}
         toAmount={convertedAmount}
         currencyLabel={selectedOption?.label || selectedCurrency}
-        
+
       />
 
       {/* Swap Result Popup */}

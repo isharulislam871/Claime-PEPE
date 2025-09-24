@@ -4,8 +4,7 @@ import UserWallet from '@/models/UserWallet';
 import History from '@/models/History';
 import Withdrawal from '@/models/Withdrawal';
 import mongoose from 'mongoose';
-import { decrypt } from '@/lib/authlib';
-
+ 
 interface WalletResponse {
   success: boolean;
   message?: string;
@@ -85,7 +84,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Decrypt the userId to get telegramId
-    const telegramId = decrypt(encryptedUserId);
+    const telegramId =  encryptedUserId 
     if (!telegramId) {
       return NextResponse.json({
         success: false,

@@ -5,6 +5,7 @@ import { coinSaga } from './private/coin';
 import { botSaga } from './private/bot';
 import { walletSaga } from './private/wallet';
 import { adsSettingsSaga, rpcNodeSaga } from './public';
+import { appSaga } from './public/app/saga';
 import { activitySaga } from './private/activity';
 import { dailyCheckInSaga } from './private/dailyCheckIn';
 // Public sagas
@@ -21,5 +22,6 @@ export function* rootSaga(): Generator<Effect, void, unknown> {
     fork(rpcNodeSaga),
     fork(activitySaga),
     fork(dailyCheckInSaga),
+    fork(appSaga),
   ]);
 }

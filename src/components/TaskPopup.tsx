@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Popup, Card, List, Badge, ProgressBar, Empty } from 'antd-mobile';
-import { CloseOutline, CheckCircleOutline, RightOutline, StarOutline } from 'antd-mobile-icons';
-import { UnorderedListOutlined,  TwitterOutlined, YoutubeOutlined, InstagramOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Popup, Card, List, Badge, ProgressBar, Empty, SearchBar, Tabs } from 'antd-mobile';
+import { CloseOutline, CheckCircleOutline, RightOutline, StarOutline, SearchOutline, FilterOutline } from 'antd-mobile-icons';
+import { TrophyOutlined, FireOutlined, DollarOutlined, SortAscendingOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
-import { Button } from 'antd';
+
 import { useSelector, useDispatch } from 'react-redux';
 import { selectTasks } from '@/modules/private/task/selectors';
 import { fetchTasksRequest, completeTaskRequest } from '@/modules/private/task';
@@ -13,315 +13,213 @@ import { fetchTasksRequest, completeTaskRequest } from '@/modules/private/task';
 interface TaskPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onTaskCompleted?: (taskId: string, reward: number) => void;
+
 }
+ 
+import TelegramOutlined from './TelegramOutlined';
+import TaskDetailPopup from './TaskDetailPopup';
 
-import { Task } from '@/modules/private/task/types';
+ 
 
-interface TaskProgress {
-  taskId: string;
-  started: boolean;
-  verified: boolean;
-  completedAt: string | null;
-}
-
-export default function TaskPopup({ isOpen, onClose, onTaskCompleted }: TaskPopupProps) {
+export default function TaskPopup({ isOpen, onClose }: TaskPopupProps) {
   const dispatch = useDispatch();
   const tasks = useSelector(selectTasks);
-  const [taskProgress, setTaskProgress] = useState<{ [key: string]: TaskProgress }>({});
-  const [verifyingTask, setVerifyingTask] = useState<string | null>(null);
-  const [verificationProgress, setVerificationProgress] = useState(0);
-
+  
+  // State for task detail popup
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
+  
   useEffect(() => {
     if (isOpen) {
       // Fetch tasks from Redux
       dispatch(fetchTasksRequest());
+
     }
   }, [isOpen, dispatch]);
 
-  function TelegramOutlined({ className = "", ...props }: React.SVGProps<SVGSVGElement>) {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="1em"
-        height="1em"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-        role="img"
-        aria-label="Telegram"
-        {...props}
-      >
-        {/* stylized paper-plane outline */}
-        <path d="M21 3 3.5 10.5l4 1.6L12 21l3-5 5-12z" />
-        {/* inner detail line */}
-        <path d="M21 3 10 13" />
-      </svg>
-    );
-  }
-
-  const getTaskIcon = (type: string) => {
-    switch (type) {
-      case 'telegram': return  <TelegramOutlined className="text-blue-500 text-xl" />; {/* <TelegramOutlined className="text-blue-500 text-xl" /> */};
-      case 'twitter': return <TwitterOutlined className="text-blue-400 text-xl" />;
-      case 'youtube': return <YoutubeOutlined className="text-red-500 text-xl" />;
-      case 'instagram': return <InstagramOutlined className="text-pink-500 text-xl" />;
-      default: return <UnorderedListOutlined className="text-blue-600 text-xl" />;
-    }
-  };
-
-  const getTaskColor = (type: string) => {
-    switch (type) {
-      case 'telegram': return 'bg-blue-100';
-      case 'twitter': return 'bg-blue-100';
-      case 'youtube': return 'bg-red-100';
-      case 'instagram': return 'bg-pink-100';
-      default: return 'bg-blue-100';
-    }
-  };
-
-  const getDifficultyColor = (type: string) => {
-    switch (type) {
-      case 'daily': return 'success';
-      case 'social': return 'warning';
-      case 'special': return 'danger';
-      default: return 'primary';
-    }
-  };
-
   const getDifficultyIcon = (type: string) => {
     switch (type) {
-      case 'daily': return '⭐';
-      case 'social': return '⭐⭐';
-      case 'special': return '⭐⭐⭐';
-      default: return '⭐';
+      case 'daily': return <FireOutlined className="text-[#0ECB81]" />;
+      case 'social': return <TrophyOutlined className="text-[#F0B90B]" />;
+      case 'special': return <StarOutline className="text-[#F6465D]" />;
+      default: return <FireOutlined className="text-[#F0B90B]" />;
     }
   };
-
-  const handleStartTask = (task: Task) => {
-    // Open the task URL
-    window.open(task.url, '_blank');
-    
-    // Update progress
-    const newProgress = {
-      ...taskProgress,
-      [task.id]: {
-        taskId: task.id,
-        started: true,
-        verified: false,
-        completedAt: null
-      }
-    };
-    setTaskProgress(newProgress);
-    localStorage.setItem('taskProgress', JSON.stringify(newProgress));
-    
-    toast.info('Task started! Complete the action and click verify.');
-  };
-
-  const handleVerifyTask = async (task: Task) => {
-    if (!taskProgress[task.id]?.started) {
-      toast.error('Please start the task first!');
-      return;
-    }
-
-    setVerifyingTask(task.id);
-    setVerificationProgress(0);
-
-    try {
-      // Simulate verification process with progress
-      const verificationSteps = [
-        'Checking task completion...',
-        'Validating action...',
-        'Confirming verification...',
-        'Awarding points...'
-      ];
-
-      for (let i = 0; i < verificationSteps.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setVerificationProgress((i + 1) * 25);
-        
-        if (i < verificationSteps.length - 1) {
-          toast.info(verificationSteps[i]);
-        }
-      }
-
-      // Mark task as completed
-      const newProgress = {
-        ...taskProgress,
-        [task.id]: {
-          ...taskProgress[task.id],
-          verified: true,
-          completedAt: new Date().toISOString()
-        }
-      };
-      setTaskProgress(newProgress);
-      localStorage.setItem('taskProgress', JSON.stringify(newProgress));
-
-      // Dispatch Redux action to complete the task
-      dispatch(completeTaskRequest(task.id));
-
-      // Call callback if provided
-      if (onTaskCompleted) {
-        onTaskCompleted(task.id, task.reward);
-      }
-
-      toast.success(`Task verified! +${task.reward} points earned! 🎉`);
-      
-    } catch (error) {
-      toast.error('Verification failed. Please try again.');
-    } finally {
-      setVerifyingTask(null);
-      setVerificationProgress(0);
-    }
-  };
-
-  const getCompletedTasksCount = () => {
+ 
+  const getCompletedTasksCount = useCallback(() => {
     return tasks.filter(task => task.completed).length;
-  };
+  }, [tasks]);
 
-  const getTotalRewards = () => {
+  const getTotalRewards = useCallback(() => {
     return tasks.filter(task => task.completed).reduce((sum, task) => sum + task.reward, 0);
+  }, [tasks]);
+
+  // Handle task click to open detail popup
+  const handleTaskClick = (task: any) => {
+    setSelectedTask(task);
+    setIsTaskDetailOpen(true);
   };
 
+  // Handle closing task detail popup
+  const handleCloseTaskDetail = () => {
+    setIsTaskDetailOpen(false);
+    setSelectedTask(null);
+  };
+
+  // Handle completing a task
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      dispatch(completeTaskRequest(taskId));
+      handleCloseTaskDetail();
+    } catch (error) {
+      toast.error('Failed to complete task');
+    }
+  };
+
+ 
   return (
     <Popup
       visible={isOpen}
       onMaskClick={onClose}
       position='bottom'
-      bodyStyle={{ height: '100vh', backgroundColor: '#f8fafc' }}
+      bodyStyle={{ height: '100vh', backgroundColor: '#0B0E11' }}
     >
-      <div className="flex flex-col h-full bg-gray-50">
+      <div className="flex flex-col h-full bg-[#0B0E11] text-white">
         {/* Header */}
-        <div className="bg-white border-b border-gray-100 shadow-sm">
+        <div className="bg-[#1E2329] border-b border-[#2B3139]">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <UnorderedListOutlined className="text-blue-600 text-lg" />
+              <div className="w-10 h-10 bg-gradient-to-r from-[#F0B90B] to-[#FCD535] rounded-xl flex items-center justify-center shadow-lg">
+                <TrophyOutlined className="text-black text-xl font-bold" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Social Tasks</h2>
-                <p className="text-sm text-gray-500">Complete tasks to earn points</p>
+                <h2 className="text-lg font-bold text-white">Task Center</h2>
+                <p className="text-xs text-[#848E9C]">Complete tasks to earn rewards</p>
               </div>
             </div>
-            <Button
-              size='small'
+            <button
               onClick={onClose}
-              className="!p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="w-8 h-8 bg-[#2B3139] hover:bg-[#3C4043] rounded-lg flex items-center justify-center transition-all duration-200"
             >
-              <CloseOutline className="text-gray-600" />
-            </Button>
+              <CloseOutline className="text-[#848E9C] text-lg" />
+            </button>
+          </div>
+
+          {/* Stats Bar */}
+          <div className="px-6 pb-3">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-4 bg-[#0ECB81] rounded-full flex items-center justify-center">
+                  <CheckCircleOutline className="text-white text-xs" />
+                </div>
+                <span className="text-xs text-[#848E9C]">Completed:</span>
+                <span className="text-xs font-semibold text-[#0ECB81]">{getCompletedTasksCount()}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <DollarOutlined className="text-[#F0B90B] text-sm" />
+                <span className="text-xs text-[#848E9C]">Earned:</span>
+                <span className="text-xs font-semibold text-[#F0B90B]">{getTotalRewards()} pts</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-4">
-         
-
           {/* Task List */}
-          <Card title="Available Tasks" className="mb-4">
-            <div className="space-y-3">
-              {tasks.length > 0 ? (
-                tasks.map((task) => (
+          <div className="space-y-3">
+            {tasks.length > 0 ? (
+              tasks.map((task) => (
                 <div
                   key={task.id}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    task.completed
-                      ? 'border-green-200 bg-green-50'
-                      : 'border-gray-200 bg-white hover:border-blue-300'
-                  }`}
+                  onClick={() => handleTaskClick(task)}
+                  className={`relative overflow-hidden rounded-xl border transition-all duration-300 cursor-pointer ${task.completed
+                      ? 'border-[#0ECB81] bg-gradient-to-r from-[#0ECB81]/10 to-[#0ECB81]/5'
+                      : 'border-[#2B3139] bg-[#1E2329] hover:border-[#F0B90B]/50 hover:shadow-lg hover:shadow-[#F0B90B]/10'
+                    }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 ${getTaskColor(task.type)} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      {getTaskIcon(task.type)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-gray-900 truncate">{task.title}</h3>
-                        {task.completed && (
-                          <CheckCircleOutline className="text-green-500 text-lg flex-shrink-0" />
-                        )}
-                      </div>
-                      
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{task.description}</p>
-                      
-                      <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        <Badge 
-                          content={getDifficultyIcon(task.type)} 
-                          color={getDifficultyColor(task.type)}
-                        />
-                        <Badge content={task.duration || '5 min'} color="primary" />
-                        <Badge content={`+${task.reward} pts`} color="success" />
+                  {/* Gradient overlay for completed tasks */}
+                  {task.completed && (
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-[#0ECB81]/20 to-transparent rounded-bl-full" />
+                  )}
+
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 bg-[#0088cc]/10 border border-[#0088cc]/20  rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                        <div className="text-sm">
+                          <TelegramOutlined className="text-[#0088cc] text-xl" />
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {!task.completed ? (
-                          <>
-                            {!taskProgress[task.id]?.started ? (
-                              <Button
-                                color="primary"
-                                size="small"
-                                onClick={() => handleStartTask(task)}
-                                className="rounded-lg"
-                              >
-                                Start Task
-                                <RightOutline className="ml-1" />
-                              </Button>
-                            ) : (
-                              <Button
-                                color="green"
-                                size="small"
-                                loading={verifyingTask === task.id}
-                                onClick={() => handleVerifyTask(task)}
-                                className="rounded-lg"
-                              >
-                                {verifyingTask === task.id ? 'Verifying...' : 'Verify'}
-                              </Button>
-                            )}
-                          </>
-                        ) : (
-                          <div className="px-3 py-1 bg-green-100 border border-green-300 rounded-lg">
-                            <span className="text-green-700 text-sm font-medium">✓ Completed</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <h3 className="text-sm font-bold text-white truncate">{task.title}</h3>
+
+                          {task.completed && (
+                            <div className="w-5 h-5 bg-[#0ECB81] rounded-full flex items-center justify-center">
+                              <CheckCircleOutline className="text-white text-xs" />
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-[#848E9C] mb-3 line-clamp-2 leading-relaxed">{task.description}</p>
+
+                        <div className="flex items-center gap-2 mb-3 flex-wrap">
+                          <div className={`flex items-center gap-1 px-1.5 py-0.5 bg-[#0088cc]/10 border border-[#0088cc]/20 rounded-md`}>
+                            <div className="text-xs">
+                              <TelegramOutlined className="text-[#0088cc] text-xl" />
+                            </div>
+                            <span className="text-xs font-medium text-white">
+                              Telegram
+                            </span>
                           </div>
-                        )}
-                      </div>
-
-                      {verifyingTask === task.id && (
-                        <div className="mt-3">
-                          <ProgressBar
-                            percent={verificationProgress}
-                            className="mb-2"
-                          />
-                          <div className="text-center text-sm text-blue-600 font-medium">
-                            Verifying task completion... {verificationProgress}%
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-[#2B3139] rounded-md">
+                            <div className="text-xs">
+                              {getDifficultyIcon(task.type)}
+                            </div>
+                            <span className="text-xs font-medium text-white">
+                              {task.type.charAt(0).toUpperCase() + task.type.slice(1)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-[#2B3139] rounded-md">
+                            <span className="text-xs text-[#848E9C]">⏱</span>
+                            <span className="text-xs font-medium text-white">{task.duration || '5m'}</span>
+                          </div>
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gradient-to-r from-[#F0B90B]/20 to-[#FCD535]/20 rounded-md border border-[#F0B90B]/30">
+                            <DollarOutlined className="text-[#F0B90B] text-xs" />
+                            <span className="text-xs font-bold text-[#F0B90B]">+{task.reward}</span>
                           </div>
                         </div>
-                      )}
+ 
+                       
+                      </div>
                     </div>
                   </div>
                 </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Empty
-                    description="No tasks available"
-                    imageStyle={{ height: 60 }}
-                  />
-                  <p className="text-gray-500 text-sm mt-2">
-                    Check back later for new tasks to earn points!
-                  </p>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-[#2B3139] rounded-full flex items-center justify-center mx-auto mb-3">
+                  <TrophyOutlined className="text-[#848E9C] text-lg" />
                 </div>
-              )}
-            </div>
-          </Card>
-
-         
+                <h3 className="text-sm font-semibold text-white mb-1">No Tasks Available</h3>
+                <p className="text-[#848E9C] text-xs">
+                  Check back later for new tasks!
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Task Detail Popup */}
+      <TaskDetailPopup
+        isOpen={isTaskDetailOpen}
+        task={selectedTask}
+        onClose={handleCloseTaskDetail}
+        onCompleteTask={handleCompleteTask}
+        getDifficultyIcon={getDifficultyIcon}
+      />
     </Popup>
   );
 }

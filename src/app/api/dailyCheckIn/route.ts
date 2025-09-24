@@ -2,10 +2,7 @@ import User, { IUser } from '@/models/User';
 import { NextRequest, NextResponse } from 'next/server';
 import Activity, { IActivity } from '@/models/Activity';
 import crypto from 'crypto';
-
-import { verifyFingerprint } from 'auth-fingerprint';
-
-
+ 
 interface DailyCheckInData {
   id: string;
   userId: string;

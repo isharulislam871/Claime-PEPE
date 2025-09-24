@@ -14,7 +14,7 @@ import {
   selectWalletByCurrency,
   selectIsWalletDataLoaded
 } from '@/modules/private/wallet';
-import { encrypt } from '@/lib/authlib';
+ 
 import { getCurrentUser } from '@/lib/api';
 
 export const useWallet = () => {
@@ -34,7 +34,7 @@ export const useWallet = () => {
   const fetchWallet = useCallback(() => {
     const currentUser = getCurrentUser();
     if (currentUser?.telegramId) {
-      const userId = encrypt(currentUser.telegramId);
+      const userId = currentUser.telegramId
       dispatch(fetchWalletRequest({ userId }));
     }
   }, [dispatch]);
@@ -42,7 +42,7 @@ export const useWallet = () => {
   const refreshWalletData = useCallback(() => {
     const currentUser = getCurrentUser();
     if (currentUser?.telegramId) {
-      const userId = encrypt(currentUser.telegramId);
+      const userId = currentUser.telegramId
       dispatch(refreshWallet({ userId }));
     }
   }, [dispatch]);

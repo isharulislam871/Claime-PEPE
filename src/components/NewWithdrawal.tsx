@@ -38,7 +38,7 @@ import {
   selectCreatedWithdrawal
 } from '../modules/private/withdrawals';
 import { useWallet } from '@/hooks/useWallet';
-import { encrypt } from '@/lib/authlib';
+ 
 import { getCurrentUser } from '@/lib/api';
 import CurrencySelection from './CurrencySelection';
 import NetworkSelection from './NetworkSelection';
@@ -47,6 +47,7 @@ import WithdrawalResultPopup from './WithdrawalResultPopup';
 import WithdrawalConfirmationPopup from './WithdrawalConfirmationPopup';
 import { toast } from 'react-toastify';
 import { Button, Input } from 'antd';
+import { generateSignature } from '@/lib/utils/signature';
 
 
 interface NewWithdrawalProps {
@@ -221,7 +222,7 @@ export default function NewWithdrawal({ isOpen, onClose }: NewWithdrawalProps) {
       return;
     }
 
-    const hash = encrypt(currentUser.telegramId);
+    const { hash  }= generateSignature(JSON.stringify({ userId: currentUser.telegramId, amount: formData.amount, currency: formData.currency, network: formData.network, address: formData.address, memo: formData.memo }) , process.env.NEXTAUTH_SECRET || '')
     
     // Dispatch Redux action to create withdrawal
     dispatch(createWithdrawal({

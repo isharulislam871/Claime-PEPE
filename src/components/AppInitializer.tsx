@@ -1,95 +1,57 @@
 'use client';
 
-import { useEffect, useCallback, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useDispatch } from 'react-redux';
 import MaintenancePopup from './MaintenancePopup';
+import { 
+  initializeApp,
+  useMaintenanceStatus,
+  useAppInitialization,
+} from '@/modules/public/app';
+import { AppDispatch } from '@/modules/store';
 
  
-interface AdsSettings {
-  enableGigaPubAds: boolean;
-  gigaPubAppId: string;
-  defaultAdsReward: number;
-  adsWatchLimit: number;
-  adsRewardMultiplier: number;
-  minWatchTime: number;
-  vpnRequired: boolean;
-  vpnNotAllowed: boolean;
-}
-
-interface MaintenanceData {
-  enabled: boolean;
-  message?: string;
-  estimatedDuration?: string;
-  startTime?: string;
-  endTime?: string;
-  reason?: string;
-  affectedServices?: string[];
-}
-
-interface AppInitializerProps {
-  setAdsSettings: (settings: AdsSettings | null) => void;
-  checkVpnStatus: () => Promise<void>;
-}
-
-export default function AppInitializer({ 
-  setAdsSettings, 
-  checkVpnStatus 
-}: AppInitializerProps) {
-  const router = useRouter();
+ 
+ 
+export default function AppInitializer() {
+  const dispatch = useDispatch<AppDispatch>();
   const hasInitialized = useRef(false);
-  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
+  
+  // Get app state from Redux store using custom hooks
+  const { isEnabled: isMaintenanceEnabled, message: maintenanceMessage } = useMaintenanceStatus();
+  const { isInitializing, error } = useAppInitialization();
 
-  // Memoize the initialization function to prevent recreating on every render
-  const initializeApp = useCallback(async () => {
+  useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    try {
-      // Check maintenance status first
-      const maintenanceResponse = await fetch('/api/maintenance');
-      if (maintenanceResponse.ok) {
-        const maintenanceResponseData = await maintenanceResponse.json();
-        if (maintenanceResponseData.maintenance.enabled) {
-          setMaintenanceOpen(true);
-          return;
-        }
-      }
- 
-
-      const webApp = window.Telegram?.WebApp;
-      
-      if (webApp) {
-        // Initialize Telegram WebApp
-        webApp.ready();
-        // Request write access for enhanced user data
-        webApp.requestWriteAccess?.((granted) => {
-          console.log('Write access:', granted ? 'granted' : 'denied');
-          if (granted) {
-            console.log('App can now access user contact information');
-          }
-        });
-   
-      } else {
-        console.warn('Telegram WebApp not available');
-    
-      }
-    } catch (error) {
-      console.error('Error initializing Telegram app:', error);
-    
-    }  
-  }, [router,  setAdsSettings, checkVpnStatus]);
-
-  useEffect(() => {
-    initializeApp();
-  }, [initializeApp]);
+    // Dispatch the initialize app action
+    dispatch(initializeApp());
+  }, [dispatch]);
 
   return (
     <>
       <MaintenancePopup 
-        isOpen={maintenanceOpen}
-        onClose={() => setMaintenanceOpen(false)}
-        
+        isOpen={isMaintenanceEnabled}
+        onClose={() => {
+          // Handle maintenance popup close if needed
+          console.log('Maintenance popup closed');
+        }}
+        maintenanceData={{
+          enabled: isMaintenanceEnabled,
+          message: maintenanceMessage,
+        }}
       />
+      {error && (
+        <div className="error-message">
+          Error initializing app: {error}
+        </div>
+      )}
+      {isInitializing && (
+        <div className="loading-indicator">
+          Initializing app...
+        </div>
+      )}
     </>
   );
 }

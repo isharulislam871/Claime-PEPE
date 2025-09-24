@@ -15,7 +15,7 @@ import {
   watchAdFailure
 } from './actions';
 import { getCurrentUser } from '@/lib/api';
-import { encrypt } from '@/lib/authlib';
+ 
 import { toast } from 'react-toastify';
 import { API_CALL, TypeApiPromise } from '@/lib/client';
 import axios from 'axios';
@@ -24,7 +24,7 @@ import axios from 'axios';
 function* fetchTasksSaga(): Generator<Effect, void, unknown> {
   try {
     const currentUser = getCurrentUser();
-    const hash = encrypt(currentUser?.telegramId as string);
+    const hash = currentUser?.telegramId 
 
     const {response} : TypeApiPromise = (yield call(API_CALL, { url : '/tasks' , params : { hash}})) as any;
     yield put(fetchTasksSuccess(response?.result?.result?.tasks || [], response?.result?.result?.taskStatus || {}));
@@ -94,7 +94,7 @@ function* fetchAdsSaga(): Generator<Effect, void, unknown> {
   try {
     const currentUser = getCurrentUser();
     
-    const hash = encrypt(currentUser?.telegramId as string);
+    const hash = currentUser?.telegramId
   
     const {response , status } : any = (yield call(API_CALL,{ url : '/ads' , params : { hash }})) as any;
     
@@ -124,7 +124,7 @@ function* watchAdSaga(): Generator<Effect, void, unknown> {
       return;
     }
 
-    const hash = encrypt(currentUser.telegramId);
+    const hash = currentUser.telegramId
     const { response, status }: TypeApiPromise = (yield call(API_CALL, { 
       url: '/ads', 
       method: 'POST', 

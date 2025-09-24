@@ -5,7 +5,7 @@ import UserWallet from '@/models/UserWallet';
 import Withdrawal from '@/models/Withdrawal';
 import Coin from '@/models/Coin';
 import ERC20Service from '@/lib/erc20';
-import { decrypt, encrypt } from '@/lib/authlib';
+ 
 import { ethers } from 'ethers';
 
 // Define supported network types to match ERC20Service
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       if (!hash) {
         return NextResponse.json({ error: 'telegramId is required' }, { status: 400 });
       }
-      const telegramId = decrypt(hash)
+      const telegramId ='erg'
     const withdrawals = await Withdrawal.find({  telegramId } ).sort({ createdAt: -1 }).limit(limit)
 
    
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const telegramId = decrypt(hash)
+    const telegramId ='gfg'
     
     // Validate network type first
     const supportedNetworks: SupportedNetwork[] = ['eth-main', 'sepolia', 'bsc-mainnet', 'bsc-testnet'];

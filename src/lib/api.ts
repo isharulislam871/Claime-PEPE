@@ -1,7 +1,8 @@
 // API utility functions for client-side requests
 
-import { encrypt } from "./authlib";
+import { generateSignature } from "auth-fingerprint";
 
+ 
 export interface User {
   _id: string;
   telegramId: string;
@@ -54,8 +55,8 @@ export const userAPI = {
   // Get user by telegram ID
   async getUser(telegramId: string): Promise<User | null> {
     try {
-      const hash = encrypt(telegramId)
-      const response = await fetch(`/api/users?hash=${hash}`);
+      const { hash , signature , timestamp } =  generateSignature(JSON.stringify({ telegramId }), process.env.NEXTAUTH_SECRET || '')
+      const response = await fetch(`/api/users?hash=${hash}&signature=${signature}&timestamp=${timestamp}`);
       if (response.status === 404) return null;
       if (!response.ok) throw new Error('Failed to fetch user');
       const data = await response.json();

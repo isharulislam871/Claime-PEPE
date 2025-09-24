@@ -1,20 +1,44 @@
 import TelegramBot from 'node-telegram-bot-api';
+import { BotConfig } from '@/models/BotConfig';
+import mongoose from 'mongoose';
 
 class TelegramService {
-  private bot: TelegramBot;
+  private bot: TelegramBot | null = null;
+  private botUsername: string = 'Bot';
 
   constructor() {
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    
-    if (!token) {
-      throw new Error('TELEGRAM_BOT_TOKEN is required');
-    }
+    // Bot will be initialized when needed
+  }
 
-    this.bot = new TelegramBot(token, { polling: false });
+  private async initializeBot(): Promise<void> {
+    if (this.bot) return;
+
+    try {
+      // Connect to MongoDB if not already connected
+      if (mongoose.connection.readyState === 0) {
+        await mongoose.connect(process.env.MONGODB_URI || '');
+      }
+
+      // Get bot configuration from database
+      const botConfig = await BotConfig.findOne().sort({ lastUpdated: -1 });
+      
+      if (!botConfig || !botConfig.botToken) {
+        throw new Error('Bot token not found in database. Please configure the bot first.');
+      }
+
+      this.bot = new TelegramBot(botConfig.botToken, { polling: false });
+      this.botUsername = botConfig.botUsername || 'Bot';
+    } catch (error) {
+      console.error('Failed to initialize Telegram bot:', error);
+      throw new Error('Failed to initialize Telegram bot. Please check bot configuration.');
+    }
   }
 
   async sendBroadcast(title: string, message: string, type: string, userIds: string[]): Promise<{ success: boolean; delivered: number; failed: number; errors?: string[] }> {
     try {
+      await this.initializeBot();
+      if (!this.bot) throw new Error('Bot initialization failed');
+      
       // Format message based on type
       const formattedMessage = this.formatMessage(title, message, type);
       
@@ -34,7 +58,7 @@ class TelegramService {
           failed++;
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           errors.push(`User ${userId}: ${errorMsg}`);
-          console.error(`Failed to send message to user ${userId}:`, error);
+       
         }
       }
 
@@ -57,6 +81,9 @@ class TelegramService {
 
   async sendMessageToUser(userId: string, title: string, message: string, type: string): Promise<{ success: boolean; messageId?: number; error?: string }> {
     try {
+      await this.initializeBot();
+      if (!this.bot) throw new Error('Bot initialization failed');
+      
       const formattedMessage = this.formatMessage(title, message, type);
       
       const result = await this.bot.sendMessage(userId, formattedMessage, {
@@ -69,7 +96,7 @@ class TelegramService {
         messageId: result.message_id
       };
     } catch (error) {
-      console.error(`Error sending message to user ${userId}:`, error);
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -105,7 +132,7 @@ class TelegramService {
 
     const emoji = typeEmojis[type] || '📢';
     
-    return `${emoji} <b>${title}</b>\n\n${message}\n\n🤖 <i>TaskUp Bot</i>`;
+    return `${emoji} <b>${title}</b>\n\n${message}\n\n🤖 <i>${this.botUsername}</i>`;
   }
 
   async getUserCount(): Promise<number> {
@@ -117,6 +144,9 @@ class TelegramService {
 
   async testConnection(): Promise<boolean> {
     try {
+      await this.initializeBot();
+      if (!this.bot) return false;
+      
       await this.bot.getMe();
       return true;
     } catch (error) {
