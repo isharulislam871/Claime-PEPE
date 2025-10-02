@@ -55,21 +55,7 @@ export default function NetworkSelectionPopup({
     return networkIcons[network.toLowerCase()] || null;
   };
 
-  const getNetworkFee = (network: string) => {
-    const fees: Record<string, number> = {
-      'ethereum': 0.005,
-      'bitcoin': 0.0001,
-      'binance': 0.001,
-      'polygon': 0.01,
-      'avalanche': 0.01,
-      'solana': 0.000005,
-      'cardano': 0.17,
-      'polkadot': 0.01,
-      'chainlink': 0.1,
-      'litecoin': 0.001
-    };
-    return fees[network.toLowerCase()] || 0.01;
-  };
+  
 
   const getConfirmationTime = (network: string) => {
     const times: Record<string, string> = {
@@ -86,22 +72,7 @@ export default function NetworkSelectionPopup({
     };
     return times[network.toLowerCase()] || '1-5 minutes';
   };
-
-  const getMinWithdrawal = (network: string) => {
-    const mins: Record<string, number> = {
-      'ethereum': 0.01,
-      'bitcoin': 0.001,
-      'binance': 0.01,
-      'polygon': 1,
-      'avalanche': 0.01,
-      'solana': 0.01,
-      'cardano': 1,
-      'polkadot': 0.1,
-      'chainlink': 0.1,
-      'litecoin': 0.01
-    };
-    return mins[network.toLowerCase()] || 0.01;
-  };
+ 
 
   const getMaxWithdrawal = (network: string) => {
     const maxs: Record<string, number> = {
@@ -126,9 +97,9 @@ export default function NetworkSelectionPopup({
       name: node.network,
       symbol: node.network.toUpperCase(),
       icon: getNetworkIcon(node.network),
-      fee: getNetworkFee(node.network),
+      fee: Number(0.0000001).toFixed(8),
       confirmationTime: getConfirmationTime(node.network),
-      minWithdrawal: getMinWithdrawal(node.network),
+      minWithdrawal: 0.0002,
       maxWithdrawal: getMaxWithdrawal(node.network),
       isActive: node.isActive && node.status === 'online'
     }));
@@ -161,10 +132,7 @@ export default function NetworkSelectionPopup({
     setSearchText('');
   };
 
-  const formatFee = (fee: number, currency: string) => {
-   
-    return fee.toString();
-  };
+ 
 
   const formatWithdrawalLimits = (min: number, max: number, currency: string) => {
      return `${min} - ${max}`;
@@ -317,7 +285,7 @@ export default function NetworkSelectionPopup({
 
                         <div className="space-y-1">
                           <div className="text-sm text-gray-600">
-                            <span className="font-medium">Fee:</span> {formatFee(network.fee, currency)} {currency}
+                            <span className="font-medium">Fee:</span> { network.fee } {currency}
                           </div>
                           <div className="text-sm text-gray-600">
                             <span className="font-medium">Time:</span> {network.confirmationTime}

@@ -37,7 +37,7 @@ export default function WithdrawalConfirmationPopup({
   network,
   amount,
   address,
-  fee = '0.03 USDT',
+ 
   estimatedTime = '24-48 hours',
   loading = false
 }: WithdrawalConfirmationPopupProps) {
@@ -122,7 +122,7 @@ export default function WithdrawalConfirmationPopup({
             
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Network Fee:</span>
-              <span className="font-semibold text-orange-600">{fee}</span>
+              <span className="font-semibold text-orange-600">{Number(0.0000001).toFixed(8)}</span>
             </div>
             
             <div className="flex justify-between items-center">
@@ -135,7 +135,7 @@ export default function WithdrawalConfirmationPopup({
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Total Deducted:</span>
               <span className="font-bold text-blue-600">
-                {(parseFloat(amount) + parseFloat(fee.split(' ')[0])).toFixed(2)} {currency}
+                {(parseFloat(amount) + parseFloat('0.0000001')).toFixed(8)} {currency}
               </span>
             </div>
           </div>

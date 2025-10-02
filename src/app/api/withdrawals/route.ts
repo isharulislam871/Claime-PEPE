@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     // Check minimum withdrawal amounts
     const minWithdrawals: { [key: string]: number } = {
       'USDT': 0.1,
-      'PEPE': 50000
+      'PEPE': 1
     };
     
     const minAmount = minWithdrawals[currency.toUpperCase()];
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     // Set network fees for specific currencies
     const networkFees: { [key: string]: number } = {
       'USDT': 0.03,
-      'PEPE': 10000
+      'PEPE': 1
     };
     
     networkFee = networkFees[currency.toUpperCase()] || 0;

@@ -86,9 +86,9 @@ export default function NetworkSelection({
           id: coinNetwork.network,
           name: coinNetwork.network.toUpperCase(),
           symbol: coinNetwork.network.toUpperCase(),
-          fee: selectedCoin.fee || 0.0000001,
+          fee:   0.0000001,
           confirmationTime: '1-5 minutes',
-          minWithdrawal: selectedCoin.minWithdraw || 0.0000001,
+          minWithdrawal: 0.0002,
           maxWithdrawal: selectedCoin.maxWithdraw || 1000,
           isActive: true
         });
@@ -127,7 +127,7 @@ export default function NetworkSelection({
               </div>
               <div className="text-xs text-gray-600">
                 {selectedNetworkData ? (
-                  <>Fee: { selectedNetworkData.fee } {currency} • {selectedNetworkData.confirmationTime}</>
+                  <>Fee: { Number(0.0000001).toFixed(8)} {currency} • {selectedNetworkData.confirmationTime}</>
                 ) : (
                   'Choose withdrawal network'
                 )}

@@ -77,7 +77,7 @@ function* completeTaskSaga(action: ReturnType<typeof completeTaskRequest>): Gene
 
     if (status === 200) {
       yield put(completeTaskSuccess({ ...response.data, taskId }));
-      toast.success(response.data.message);
+      toast.success('Task Success');
        // Refresh tasks after completion
       yield put(fetchTasksRequest());
       return;

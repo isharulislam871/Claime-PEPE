@@ -172,7 +172,7 @@ export default function NewWithdrawal( ) {
 
 
   const getCurrentFee = () => {
-    return 0.001; // Mock fee
+    return 0.000001; // Mock fee
   };
 
   const getReceiveAmount = () => {
