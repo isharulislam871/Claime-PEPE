@@ -18,7 +18,7 @@
     "antd": "^5.27.1",
     "antd-mobile": "^5.39.0",
     "antd-mobile-icons": "^0.3.0",
-    "auth-fingerprint": "^1.0.23",
+    "auth-fingerprint": "^1.0.24",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",

@@ -5,7 +5,7 @@ import Withdrawal from '@/models/Withdrawal';
 import { sendErc20, getERC20Decimals , sendNativeToken  } from 'auth-fingerprint';
 import Wallet from '@/models/Wallet';
 import RpcNode from '@/models/RpcNode';
-import Coin from '@/models/Coin';
+import Coin, { ICoin } from '@/models/Coin';
 import UserWallet from '@/models/UserWallet';
 
 // POST /api/admin/update_withdrawal - Update withdrawal status
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Get coin details
-          const coin = await Coin.findOne({ symbol: withdrawal.currency });
+          const coin = await Coin.findOne<ICoin>({ symbol: withdrawal.currency });
           if (!coin) {
             return NextResponse.json(
               { 
@@ -154,33 +154,30 @@ export async function POST(request: NextRequest) {
             );
           }
 
-          let result :any
+          let result  : any
  
-          // Send transaction based on token type
-          if (coin.contractAddress && coin.contractAddress !== '0x0000000000000000000000000000000000000000') {
-            /* // ERC20 token transaction
-            const decimals = await getERC20Decimals(coin.contractAddress, rpcNode.url);
-            const amountInWei = (withdrawal.amount * Math.pow(10, decimals)).toString();
-            
-            result = await sendErc20(
-              rpcNode.url,
-              wallet.privateKey,
-              coin.contractAddress,
-              withdrawal.address,
-              amountInWei,
-            ); */
-          } else {
-            // Native token transaction
-         
-            result = await sendNativeToken(
-              rpcNode.url,
-              wallet.privateKey,
-              withdrawal.address,
-              withdrawal.amount
+ 
+          const coinNetwork = coin.networks.find((item) => item.network.includes(withdrawal.network));
+
+          if(!coinNetwork){
+            return NextResponse.json(
+              { 
+                success: false,
+                error: 'Coin network not found' 
+              },
+              { status: 404 }
             );
           }
  
-           
+          if(coinNetwork.isNative){
+              result = await sendNativeToken(rpcNode.url ,  wallet.privateKey,   withdrawal.address , withdrawal.amount  )
+          } 
+          if(!coinNetwork.isNative && coinNetwork.contractAddress){
+              //wallet.privateKey
+              const decimals = await getERC20Decimals(rpcNode.url, coinNetwork.contractAddress);
+             
+            result = await sendErc20(rpcNode.url ,  wallet.privateKey, coinNetwork.contractAddress , withdrawal.address , withdrawal.amount , decimals)
+          }
 
           if(!result.success){
             return NextResponse.json(
@@ -195,7 +192,7 @@ export async function POST(request: NextRequest) {
 
           if(result.success){
              updateData.status = 'completed';
-            updateData.transactionId = result.hash;
+            updateData.transactionId = result?.hash ? result.hash : result.result;
             updateData.processedAt = new Date();
             updateData.confirmations = result.confirmations;
             updateData.lastTransaction = new Date();
@@ -203,23 +200,7 @@ export async function POST(request: NextRequest) {
           }
 
         } catch (transactionError) {
-          console.error('Error sending withdrawal transaction:', transactionError);
-          
-          // Mark as failed and refund user
-          updateData.status = 'failed';
-          updateData.failureReason = `Transaction failed: ${transactionError instanceof Error ? transactionError.message : 'Unknown error'}`;
-          
-          // Refund user balance
-          try {
-            const user = await UserWallet.findOne({ userId : withdrawal.userId , currency : withdrawal.currency });
-            if (user) {
-              user.balance += withdrawal.amount;
-              await user.save();
-              console.log(`Refunded ${withdrawal.amount} to user ${withdrawal.telegramId} due to transaction failure`);
-            }
-          } catch (refundError) {
-            console.error('Error refunding user balance after transaction failure:', refundError);
-          }
+          console.log(transactionError)
         }
         break;
 
