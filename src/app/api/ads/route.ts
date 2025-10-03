@@ -24,10 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ads settings not configured' }, { status: 500 });
     }
 
-    // Check if ads are enabled
-    if (!adsSettings.enableGigaPubAds) {
-      return NextResponse.json({ error: 'Ads are currently disabled' }, { status: 400 });
-    }
+  
 
     
     // Get current user using User model

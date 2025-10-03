@@ -19,6 +19,8 @@ const initialState: PopupState = {
   isEarningCenterPopupVisible: false,
   isSupportPopupVisible: false,
   isAppLaunchCountdownVisible: false,
+  isBannedUserPopupVisible: false,
+  isSuspendedUserPopupVisible: false,
 };
 
 export const popupReducer = (state = initialState, action: PopupAction): PopupState => {

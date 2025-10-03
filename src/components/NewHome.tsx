@@ -10,7 +10,13 @@ import {
   Footer,
 } from 'antd-mobile';
  
-import { createUserRequest, selectCurrentUser, openPopup, closePopup, selectIsProfileOpen, selectIsWithdrawOpen, selectIsInviteFriendsOpen, selectIsHistoryOpen, selectIsSwapOpen, selectIsDailyCheckInOpen, selectIsAdWatchOpen, selectIsTaskPopupOpen, selectIsRegistrationBlockedPopupVisible, selectIsMinimumInvitesPopupVisible, selectIsPaymentSuspendedPopupVisible, selectIsRewardsPopupVisible, selectIsShopPopupVisible, selectIsVoucherPopupVisible, selectIsLeaderboardPopupVisible, selectIsEarningCenterPopupVisible, selectIsSupportPopupVisible, selectIsAppLaunchCountdownVisible, fetchQuickActionsRequest, selectEnabledQuickActions, selectQuickActionsLoading, selectQuickActionsError  } from '@/modules';
+import { 
+  createUserRequest, selectCurrentUser, openPopup,  fetchQuickActionsRequest,
+   selectEnabledQuickActions, selectQuickActionsLoading, selectQuickActionsError,
+   openBannedUserPopup,
+   openSuspendedUserPopup
+   
+  } from '@/modules';
  
 import { getCurrentUser } from '@/lib/api';
 import {
@@ -38,7 +44,9 @@ import { toast } from 'react-toastify';
  
 import PromotionSwiper  from './PromotionSwiper';
 import HeaderBalance from './HeaderBalance';
- 
+import SuspendedUserPopup from './SuspendedUserPopup';
+import BannedUserPopup from './BannedUserPopup';
+
 
 interface QuickAction {
   id: string;
@@ -63,6 +71,7 @@ export default function NewHome() {
   // Fetch quick actions on component mount
   useEffect(() => {
     dispatch(fetchQuickActionsRequest() as any);
+  
   }, [dispatch]);
 
   // Handle quick actions error
@@ -264,7 +273,9 @@ export default function NewHome() {
 
       </div>
  
- 
+      {/* Popups */}
+      <BannedUserPopup user={user || {}} />
+      <SuspendedUserPopup user={user || {}} />
     </>
   );
 }

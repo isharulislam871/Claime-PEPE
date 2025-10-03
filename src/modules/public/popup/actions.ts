@@ -73,3 +73,9 @@ export const closeSupportPopup = () => closePopup('isSupportPopupVisible');
 
 export const openAppLaunchCountdownPopup = () => openPopup('isAppLaunchCountdownVisible');
 export const closeAppLaunchCountdownPopup = () => closePopup('isAppLaunchCountdownVisible');
+
+export const openBannedUserPopup = () => openPopup('isBannedUserPopupVisible');
+export const closeBannedUserPopup = () => closePopup('isBannedUserPopupVisible');
+
+export const openSuspendedUserPopup = () => openPopup('isSuspendedUserPopupVisible');
+export const closeSuspendedUserPopup = () => closePopup('isSuspendedUserPopupVisible');

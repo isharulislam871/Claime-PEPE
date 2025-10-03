@@ -17,6 +17,8 @@ export interface PopupState {
   isEarningCenterPopupVisible: boolean;
   isSupportPopupVisible: boolean;
   isAppLaunchCountdownVisible: boolean;
+  isBannedUserPopupVisible: boolean;
+  isSuspendedUserPopupVisible: boolean;
 }
 
 export enum PopupActionTypes {

@@ -63,6 +63,12 @@ export const selectIsSupportPopupVisible = (state: RootState): boolean =>
 export const selectIsAppLaunchCountdownVisible = (state: RootState): boolean =>
   selectPopupState(state).isAppLaunchCountdownVisible;
 
+export const selectIsBannedUserPopupVisible = (state: RootState): boolean =>
+  selectPopupState(state).isBannedUserPopupVisible;
+
+export const selectIsSuspendedUserPopupVisible = (state: RootState): boolean =>
+  selectPopupState(state).isSuspendedUserPopupVisible;
+
 // Utility selector to check if any popup is open
 export const selectIsAnyPopupOpen = (state: RootState): boolean => {
   const popupState = selectPopupState(state);

@@ -21,6 +21,10 @@ import { fetchAdsRequest, fetchTasksRequest } from '@/modules/private/task';
 import { formatNumber } from '@/lib/formatNumber';
 
  
+
+
+
+
  
 
 export default function AdWatchPopup( ) {
@@ -52,6 +56,67 @@ export default function AdWatchPopup( ) {
   };
 
   const isOpen = useSelector(selectIsAdWatchOpen);
+
+
+
+ async function showAlternatingAds() {
+    // Define all ad providers in rotation
+    const ads = ["load", "giga", "adexora"];
+  
+    // Get last state from localStorage
+    let lastAd = localStorage.getItem("lastAd");
+  
+    // Find index of last shown ad
+    let lastIndex = ads.indexOf(lastAd || "");
+  
+    // Calculate next ad index (rotate)
+    let nextIndex = (lastIndex + 1) % ads.length;
+    let nextAd = ads[nextIndex];
+  
+    // Check if multiple ad providers are disabled
+    let skippedCount = 0;
+    const originalNextAd = nextAd;
+    
+    // If monetag is disabled and current ad is "load", skip to next ad
+    if (nextAd === "load" && !AdsSettings?.monetagEnabled) {
+      nextIndex = (nextIndex + 1) % ads.length;
+      nextAd = ads[nextIndex];
+      skippedCount++;
+    }
+    
+    // If giga ads are disabled and current ad is "giga", skip to next ad
+    if (nextAd === "giga" && !AdsSettings?.enableGigaPubAds) {
+      nextIndex = (nextIndex + 1) % ads.length;
+      nextAd = ads[nextIndex];
+      skippedCount++;
+    }
+    
+    // If we've skipped multiple ads, check if we're back to a disabled one
+    if (skippedCount > 0 && ((nextAd === "load" && !AdsSettings?.monetagEnabled) || (nextAd === "giga" && !AdsSettings?.enableGigaPubAds))) {
+      toast.error('Please setup ads configuration in settings');
+      return null;
+    }
+   
+    // Show the next ad
+    if (nextAd === "load") {
+      if (AdsSettings?.monetagEnabled) {
+        console.log("show monetag");
+        await LoadAds(AdsSettings?.monetagZoneId as string);
+      }
+    } else if (nextAd === "giga") {
+      console.log("show giga");
+      await window.showGiga?.();
+    } else if (nextAd === "adexora") {
+      console.log("show adexora");
+      await window.showAdexora?.();
+    }
+   
+  
+    // Save state
+    localStorage.setItem("lastAd", nextAd);
+  
+    return nextAd;
+  }
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -87,27 +152,9 @@ export default function AdWatchPopup( ) {
     const adDuration = AdsSettings?.minWatchTime || 15;
     const adReward = AdsSettings?.defaultAdsReward || 10;
 
-    // Try to show ads based on available settings
-    try {
-   /*    if (AdsSettings?.monetagEnabled) {
-        await LoadAds(AdsSettings.monetagZoneId);
-      } else */ if (AdsSettings?.enableGigaPubAds) {
-        // Check if showGiga method exists and call it safely
-       /*  if (typeof window !== 'undefined' && window && 'showGiga' in window && typeof (window as any).showGiga === 'function') {
-          await (window as any).showGiga();
-        } */
+     await showAlternatingAds();
 
-          
-      // Check if showAdexora method exists and call it safely
-      if (typeof window !== 'undefined' && window && 'showAdexora' in window && typeof window.showAdexora === 'function') {
-        await window.showAdexora!();
-      }
-      }
-    } catch (error) {
-      console.warn('Ad loading failed:', error);
-      // Continue with ad simulation even if ads fail
-    }
-
+  
     try {
       // Simulate ad watching with progress
       const progressInterval = setInterval(() => {

@@ -28,6 +28,7 @@ import { toast } from 'react-toastify';
 import { API_CALL, TypeApiPromise } from '@/lib/client';
 import { getCurrentUser } from '@/lib/api';
 import { generateSignature } from 'auth-fingerprint'
+import { openBannedUserPopup, openSuspendedUserPopup } from '@/modules/public';
 
 // API response types
 interface UsersResponse {
@@ -128,6 +129,13 @@ function* createUserSaga(action: ReturnType<typeof createUserRequest>): Generato
 
     if (status === 200 || status === 201) {
       yield put(createUserSuccess(response?.result?.users));
+      console.log(response?.result?.users);
+      if(response?.result?.users?.status === 'ban'){
+        yield put(openBannedUserPopup())
+      }
+      if(response?.result?.users?.status === 'suspend'){
+        yield put(openSuspendedUserPopup())
+      }
       return;
     } 
     yield put(createUserFailure({ error : response?.error, code : response?.code, registeredIP : response?.registeredIP, currentIP : response?.currentIP}));
