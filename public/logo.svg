@@ -1,0 +1,50 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="taskupGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F0B90B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F8D12F;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="taskupGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E1E1E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2D2D2D;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="58" fill="url(#taskupGradient)" stroke="#F0B90B" stroke-width="2"/>
+  
+  <!-- Main Diamond/Arrow Shape (similar to Binance) -->
+  <g transform="translate(60, 60)">
+    <!-- Center Diamond -->
+    <polygon points="0,-20 14,-6 0,8 -14,-6" fill="white"/>
+    
+    <!-- Top Arrow -->
+    <polygon points="0,-35 8,-27 0,-19 -8,-27" fill="white"/>
+    
+    <!-- Right Arrow -->
+    <polygon points="20,-6 28,2 20,10 12,2" fill="white"/>
+    
+    <!-- Bottom Arrow -->
+    <polygon points="0,23 8,31 0,39 -8,31" fill="white"/>
+    
+    <!-- Left Arrow -->
+    <polygon points="-20,-6 -12,2 -20,10 -28,2" fill="white"/>
+    
+    <!-- Task completion checkmarks -->
+    <g transform="translate(-25, -25) scale(0.6)">
+      <path d="M5 15 L10 20 L20 5" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    
+    <g transform="translate(10, -25) scale(0.6)">
+      <path d="M5 15 L10 20 L20 5" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    
+    <!-- Up arrow for growth -->
+    <g transform="translate(0, 15) scale(0.8)">
+      <path d="M0 -5 L5 0 L2 0 L2 8 L-2 8 L-2 0 L-5 0 Z" fill="white"/>
+    </g>
+  </g>
+  
+  <!-- Text "T" in center for TaskUp -->
+  <text x="60" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1E1E1E">T</text>
+</svg>
