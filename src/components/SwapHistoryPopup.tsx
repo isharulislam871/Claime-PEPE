@@ -15,17 +15,19 @@ import {
   CloseOutline,
   CheckCircleOutline,
   CloseCircleOutline,
-  ClockCircleOutline
+  ClockCircleOutline,
+  RightOutline
 } from 'antd-mobile-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { closePopup, selectCurrentUser, selectIsSwapHistoryOpen } from '@/modules';
+import { closePopup, selectCurrentUser, selectIsSwapHistoryOpen, openPopup } from '@/modules';
 import { AppDispatch } from '@/modules/store';
 import {
   selectRecentTransactions,
   selectSwapLoading,
   selectSwapError,
   fetchSwapHistoryRequest,
-  clearSwapError
+  clearSwapError,
+  setSelectedTransaction
 } from '../modules/private/swap';
 import { toast } from 'react-toastify';
 
@@ -59,6 +61,11 @@ export default function SwapHistoryPopup() {
 
   const handleRefresh = async () => {
     dispatch(fetchSwapHistoryRequest());
+  };
+
+  const handleTransactionClick = (transaction: any) => {
+    dispatch(setSelectedTransaction(transaction));
+    dispatch(openPopup('isSwapHistoryDetailsOpen'));
   };
 
   const getStatusIcon = (status: string) => {
@@ -111,7 +118,11 @@ export default function SwapHistoryPopup() {
   };
 
   const renderTransactionCard = (transaction: any) => (
-    <Card key={transaction.id} className="mb-3">
+    <Card 
+      key={transaction.id} 
+      className="mb-3 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+      onClick={() => handleTransactionClick(transaction)}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           {getStatusIcon(transaction.status)}
@@ -127,15 +138,18 @@ export default function SwapHistoryPopup() {
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <Tag color={getStatusColor(transaction.status)} className="mb-1">
-            {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
-          </Tag>
-          {transaction.transactionId && (
-            <div className="text-xs text-gray-400 truncate max-w-20">
-              ID: {transaction.transactionId.slice(-8)}
-            </div>
-          )}
+        <div className="text-right flex items-center space-x-2">
+          <div>
+            <Tag color={getStatusColor(transaction.status)} className="mb-1">
+              {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+            </Tag>
+            {transaction.transactionId && (
+              <div className="text-xs text-gray-400 truncate max-w-20">
+                ID: {transaction.transactionId.slice(-8)}
+              </div>
+            )}
+          </div>
+          <RightOutline className="text-gray-400 text-sm" />
         </div>
       </div>
       
@@ -178,20 +192,7 @@ export default function SwapHistoryPopup() {
         <div className="flex-1 overflow-auto">
           <PullToRefresh onRefresh={handleRefresh}>
             <div className="p-4">
-              {/* Summary Card */}
-              <Card className="mb-4 bg-gradient-to-r from-cyan-50 to-blue-50">
-                <div className="text-center">
-                  <div className="text-sm text-gray-600 mb-1">Total Swaps</div>
-                  <div className="text-2xl font-bold text-cyan-600">
-                    {transactions.length}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {transactions.filter(t => t.status === 'completed').length} completed • {' '}
-                    {transactions.filter(t => t.status === 'pending').length} pending • {' '}
-                    {transactions.filter(t => t.status === 'failed').length} failed
-                  </div>
-                </div>
-              </Card>
+            
 
               {/* Transactions List */}
               {loading && transactions.length === 0 ? (
@@ -253,6 +254,7 @@ export default function SwapHistoryPopup() {
           </div>
         </div>
       </div>
+
     </Popup>
   );
 }

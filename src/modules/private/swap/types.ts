@@ -40,6 +40,7 @@ export interface SwapState {
   // Data State
   swapOptions: SwapOption[];
   recentTransactions: SwapTransaction[];
+  selectedTransaction: SwapTransaction | null;
   loading: boolean;
   error: string | null;
 }
@@ -53,6 +54,9 @@ export enum SwapActionTypes {
   SET_SHOW_RESULT = 'SET_SHOW_RESULT',
   SET_SHOW_MAINTENANCE = 'SET_SHOW_MAINTENANCE',
   RESET_SWAP_FORM = 'RESET_SWAP_FORM',
+  
+  // Transaction Details Actions
+  SET_SELECTED_TRANSACTION = 'SET_SELECTED_TRANSACTION',
   
   // Swap Process Actions
   SWAP_REQUEST = 'SWAP_REQUEST',
@@ -106,6 +110,11 @@ export interface SetShowMaintenanceAction {
 
 export interface ResetSwapFormAction {
   type: SwapActionTypes.RESET_SWAP_FORM;
+}
+
+export interface SetSelectedTransactionAction {
+  type: SwapActionTypes.SET_SELECTED_TRANSACTION;
+  payload: SwapTransaction | null;
 }
 
 // Swap Process Action Interfaces
@@ -185,6 +194,7 @@ export type SwapAction =
   | SetShowResultAction
   | SetShowMaintenanceAction
   | ResetSwapFormAction
+  | SetSelectedTransactionAction
   | SwapRequestAction
   | SwapSuccessAction
   | SwapFailureAction

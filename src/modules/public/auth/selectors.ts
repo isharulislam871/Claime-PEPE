@@ -130,7 +130,7 @@ export const selectUserBanReason = (state: RootState) => {
 
 export const selectUserAdsWatchedToday = (state: RootState) => {
   const user = selectCurrentUser(state);
-  return user?.totalAdsViewed || 0;
+  return user?.adsWatchedToday || 0;
 };
 
 export const selectUserDailyCheckInStreak = (state: RootState) => {

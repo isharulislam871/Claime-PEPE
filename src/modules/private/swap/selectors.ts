@@ -86,3 +86,7 @@ export const selectSwapFormData = (state: RootState) => ({
   selectedOption: selectSelectedSwapOption(state),
   canSwap: selectCanSwap(state)
 });
+
+// Transaction Details Selectors
+export const selectSelectedTransaction = (state: RootState) => 
+  selectSwapState(state).selectedTransaction;

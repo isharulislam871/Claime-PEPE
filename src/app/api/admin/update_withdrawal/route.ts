@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
       case 'processing':
         updateData.processedAt = new Date();
-        const user = await User.findOne({ telegramId: withdrawal.telegramId });
+        const user = await User.findOne({ telegramId: withdrawal.telegramId  });
 
         if(!user){
           return NextResponse.json(
@@ -122,6 +122,25 @@ export async function POST(request: NextRequest) {
             },
             { status: 404 }
           );
+        }
+
+        if(user.status === 'ban' || user.status === 'suspend'){
+          
+          updateData.failureReason = 'Multiple accounts detected from same IP address (Auto-banned)';
+          updateData.status = 'failed';
+          updateData.processedAt = new Date();
+          updateData.updatedAt = new Date();
+          updateData.transactionId = null;
+          await withdrawal.updateOne(updateData);
+
+          return NextResponse.json(
+            { 
+              success: false,
+              error: 'Multiple accounts detected from same IP address (Auto-banned)' 
+            },
+            { status: 400 }
+          );
+
         }
 
 

@@ -5,6 +5,7 @@ export interface PopupState {
   isHistoryOpen: boolean;
   isSwapOpen: boolean;
   isSwapHistoryOpen: boolean;
+  isSwapHistoryDetailsOpen: boolean;
   isDailyCheckInOpen: boolean;
   isAdWatchOpen: boolean;
   isTaskPopupOpen: boolean;

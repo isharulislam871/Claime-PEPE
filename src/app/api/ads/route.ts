@@ -77,19 +77,46 @@ export async function POST(request: NextRequest) {
     const baseReward = adsSettings.defaultAdsReward;
     const reward = Math.floor(baseReward * adsSettings.adsRewardMultiplier);
 
+    // Calculate 10% commission for referrer
+    const commissionRate = 0.10; // 10%
+    const commissionAmount = Math.floor(reward * commissionRate);
+
     // Update user balance and ad count using Mongoose
     user.balance += reward;
     user.totalAdsViewed += 1;
     user.totalEarned += reward;
-   
 
     await user.save();
+
+    // Process referral commission if user was referred
+    let referrerUpdated = false;
+    if (user.referredBy && commissionAmount > 0) {
+      const referrer = await User.findByTelegramId(user.referredBy);
+      if (referrer && referrer.status === 'active') {
+        referrer.balance += commissionAmount;
+        referrer.referralEarnings += commissionAmount;
+        referrer.totalEarned += commissionAmount;
+        await referrer.save();
+        referrerUpdated = true;
+
+        // Log referral commission activity
+        await Activity.create({
+          telegramId: user.referredBy,
+          type: 'referral',
+          description: `Earned ${commissionAmount} Point commission from ${user.username}'s ad view`,
+          reward: commissionAmount,
+          timestamp: new Date(),
+          hash: `ref_${hash}`,
+          ipAddress: getClientIP(request)
+        });
+      }
+    }
 
     // Log activity using Activity model
     await Activity.create({
       telegramId,
       type: 'ad_view',
-      description: `Watched   ads and earned ${reward} Point`,
+      description: `Watched ads and earned ${reward} Point${referrerUpdated ? ` (${commissionAmount} Point commission sent to referrer)` : ''}`,
       reward,
       timestamp: new Date(),
       hash,
@@ -100,8 +127,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Success! ${reward} Point has been added to your balance.`,
-      user 
+      message: `Success! ${reward} Point has been added to your balance.${referrerUpdated ? ` Your referrer earned ${commissionAmount} Point commission.` : ''}`,
+      user,
+      reward,
+      commission: referrerUpdated ? {
+        amount: commissionAmount,
+        referrerId: user.referredBy
+      } : null,
+      adsLeftToday
     });
 
   } catch (error) {

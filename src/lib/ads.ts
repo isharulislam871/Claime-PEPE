@@ -10,7 +10,7 @@ export const LoadAds = async (data: string): Promise<void> => {
 
   try {
     // Call the ad function with 'pop' argument
-    await Promise.resolve(fn('pop'));
+    await Promise.resolve(fn(''));
     console.log(`✅ ${fnName}('pop') executed successfully`);
   } catch (error) {
     console.error(`🚨 Error executing "${fnName}('pop')":`, error);

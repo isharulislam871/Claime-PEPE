@@ -3,6 +3,8 @@ import dbConnect from '@/lib/mongodb';
 import Admin from '@/models/Admin';
 import { verifySignature, generateSignature } from 'auth-fingerprint';
 import emailService from '@/lib/emailService';
+import crypto from "crypto";
+
 export async function POST(request: NextRequest) {
     try {
         await dbConnect();
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { email } = JSON.parse(data as string)
+        const { email , password } = JSON.parse(data as string)
 
 
         // Find admin by ID
@@ -50,6 +52,25 @@ export async function POST(request: NextRequest) {
                 { status: 404 }
             );
         }
+
+            function verifyHash(input : any, storedHash : any) {
+                  const newHash = crypto.createHash("sha256").update(input).digest("hex");
+                  return newHash === storedHash;
+          }
+
+
+             // Optional: add password verification if stored hashed
+         const isValid = verifyHash(password , admin.password);
+
+         if(!isValid){
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: 'Invalid password'
+                },
+                { status: 401 }
+            );
+         }
 
         // Check admin status
         if (admin.status === 'banned') {
@@ -84,34 +105,9 @@ export async function POST(request: NextRequest) {
 
 
 
-        // Send authentication success email
-        const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'Unknown';
-        /*     await emailService.sendAuthenticationAlert(admin.email, {
-                username: admin.username,
-                role: admin.role,
-                ip: clientIP,
-                userAgent: request.headers.get('user-agent') || 'Unknown',
-                timestamp: admin.lastLogin,
-                action: 'Authentication'
-            });
-            
-            // Also send successful login notification
-            await emailService.sendSuccessfulLogin(admin.email, {
-                username: admin.username,
-                role: admin.role,
-                ip: clientIP,
-                timestamp: admin.lastLogin
-            });
-            
+
  
-           
-            await emailService.sendFailedLoginAttempt(admin.email, {
-                username: admin.username,
-                attempts: admin.loginAttempts,
-                ip: clientIP,
-                timestamp: new Date(),
-            });
-         */
+    
         // Generate OTP and send email
         const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
           await emailService.sendOTPEmail(admin.email, {

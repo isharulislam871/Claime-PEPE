@@ -2,9 +2,9 @@
 
 import { ReactNode, useState } from 'react';
 import { DefaultLoadingFallback } from './LoadingFallback';
- 
+
 import NewHome from './NewHome';
- 
+
 
 import AppLaunchCountdownPopup from './AppLaunchCountdownPopup';
 import { useSelector } from 'react-redux';
@@ -21,6 +21,7 @@ import MinimumInvitesRequiredPopup from './MinimumInvitesRequiredPopup';
 import DailyCheckInPopup from './DailyCheckInPopup';
 import NewSwap from './NewSwap';
 import SwapHistoryPopup from './SwapHistoryPopup';
+import SwapHistoryDetails from './SwapHistoryDetails';
 import AdWatchPopup from './AdWatchPopup';
 import TaskPopup from './TaskPopup';
 import NewRegistrationBlockedPopup from './NewRegistrationBlockedPopup';
@@ -30,7 +31,7 @@ import NewRegistrationBlockedPopup from './NewRegistrationBlockedPopup';
 
 export default function MainWrapper({ children }: { children: ReactNode }) {
   const loading = useSelector(selectAuthLoading);
-  
+
   return (
     <>
       {
@@ -39,19 +40,20 @@ export default function MainWrapper({ children }: { children: ReactNode }) {
             <NewHome />
             <RewardsPopup />
             <SupportPopup />
-      
+
             <NewWithdrawal />
             <InviteFriendsEarn />
             < WithdrawHistoryPopup />
-           
-            < LeaderboardPopup/>
- 
+
+            < LeaderboardPopup />
+
             <EarningCenterPopup />
             < MinimumInvitesRequiredPopup
             />
             < SuspendAllPaymentServicesPopup />
             < NewSwap />
             < SwapHistoryPopup />
+            < SwapHistoryDetails />
             < DailyCheckInPopup />
             < AdWatchPopup />
             < TaskPopup />

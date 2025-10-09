@@ -27,6 +27,9 @@ export const selectIsSwapOpen = (state: RootState): boolean =>
 export const selectIsSwapHistoryOpen = (state: RootState): boolean =>
   selectPopupState(state).isSwapHistoryOpen;
 
+export const selectIsSwapHistoryDetailsOpen = (state: RootState): boolean =>
+  selectPopupState(state).isSwapHistoryDetailsOpen;
+
 export const selectIsDailyCheckInOpen = (state: RootState): boolean =>
   selectPopupState(state).isDailyCheckInOpen;
 

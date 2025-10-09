@@ -7,6 +7,7 @@ import {
   SetShowResultAction,
   SetShowMaintenanceAction,
   ResetSwapFormAction,
+  SetSelectedTransactionAction,
   SwapRequestAction,
   SwapSuccessAction,
   SwapFailureAction,
@@ -54,6 +55,11 @@ export const setShowMaintenance = (show: boolean): SetShowMaintenanceAction => (
 
 export const resetSwapForm = (): ResetSwapFormAction => ({
   type: SwapActionTypes.RESET_SWAP_FORM
+});
+
+export const setSelectedTransaction = (transaction: SwapTransaction | null): SetSelectedTransactionAction => ({
+  type: SwapActionTypes.SET_SELECTED_TRANSACTION,
+  payload: transaction
 });
 
 // Swap Process Actions

@@ -7,6 +7,7 @@ const initialState: PopupState = {
   isHistoryOpen: false,
   isSwapOpen: false,
   isSwapHistoryOpen: false,
+  isSwapHistoryDetailsOpen: false,
   isDailyCheckInOpen: false,
   isAdWatchOpen: false,
   isTaskPopupOpen: false,

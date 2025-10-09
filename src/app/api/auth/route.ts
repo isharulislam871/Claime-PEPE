@@ -82,24 +82,7 @@ export async function POST(request: NextRequest) {
       const referrer = await User.findOne({ referralCode: referredBy });
       if (referrer) {
         referrer.referralCount += 1;
-        referrer.balance += settings.referralBonus; // Bonus for referrer
-        referrer.referralEarnings += settings.referralBonus
         await referrer.save();
-
-        await Activity.create({
-          telegramId: referrer.telegramId,
-          type: 'referral',
-          description: `Referral bonus for inviting user ${telegramId}`,
-          reward: settings.referralBonus,
-          metadata: { 
-            referredUser: telegramId,
-            referralCode: referredBy,
-            bonusType: 'referrer_reward'
-          },
-          timestamp: new Date(),
-          ipAddress: clientIP,
-          hash: `referral_${referrer.telegramId}_${telegramId}_${Date.now()}`
-        })
 
       }
     }
@@ -207,20 +190,25 @@ export async function GET(request: NextRequest) {
 
   
     // Calculate 24-hour ads count from Activity model
-    const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
     const adsCount24h = await Activity.countDocuments({
       telegramId: telegramId,
-      type: 'ad_view_home',
-      timestamp: { $gte: last24Hours }
+      type: 'ad_view',
+       timestamp: { $gte: startOfToday, $lt: endOfToday }
+
     });
 
+ 
     // Log the user access
    if(user.status === 'active') {
     await Activity.create({
       telegramId,
       type: 'login',
       description: 'User data accessed via GET /api/users',
-      reward: 0,
+      reward: .02,
       metadata: { method: 'GET', endpoint: '/api/users' },
       timestamp: new Date(),
       ipAddress: clientIP,

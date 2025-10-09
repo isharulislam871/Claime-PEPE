@@ -15,15 +15,12 @@ import {
 import { useSelector, useDispatch  } from 'react-redux';
 import { toast } from 'react-toastify';
 import { LoadAds } from '@/lib/ads';
-import { closePopup, selectAdsDailyLimit, selectAdsSettings, selectAuthLoading, selectIsAdWatchOpen , selectUserAdsWatchedToday, selectUserBalance, watchAdRequest ,   } from '@/modules';
+import { closePopup, fetchUserRequest, selectAdsDailyLimit, selectAdsSettings, selectAuthLoading, selectIsAdWatchOpen , selectUserAdsWatchedToday, selectUserBalance, watchAdRequest ,   } from '@/modules';
 import { formatNumber } from '@/lib/formatNumber';
 
  
 
 
-
-
- 
 
 export default function AdWatchPopup( ) {
   
@@ -106,7 +103,9 @@ export default function AdWatchPopup( ) {
   }
 
   const handleRefresh = async () => {
- 
+      dispatch(fetchUserRequest());
+      // Return a resolved promise to satisfy PullToRefresh component
+      return Promise.resolve();
   };
   
 

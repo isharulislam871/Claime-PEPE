@@ -19,6 +19,7 @@ const initialState: SwapState = {
   // Data State
   swapOptions: [],
   recentTransactions: [],
+  selectedTransaction: null,
   loading: false,
   error: null
 };
@@ -75,6 +76,12 @@ export const swapReducer = (state = initialState, action: SwapAction): SwapState
         errorCode: '',
         transactionId: undefined,
         error: null
+      };
+
+    case SwapActionTypes.SET_SELECTED_TRANSACTION:
+      return {
+        ...state,
+        selectedTransaction: action.payload
       };
 
     // Swap Process Actions

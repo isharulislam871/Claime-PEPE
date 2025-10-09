@@ -11,28 +11,53 @@ export async function GET(request: NextRequest) {
   try {
     // Get current date for last 1 hour stats
     const now = new Date();
-    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  // Define the start of today (00:00:00)
+const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
 
-    // Get user statistics
+// Define the exclusive end of today (00:00:00 tomorrow)
+const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+// Define the last millisecond of today (23:59:59.999 today)
+// Note: Using 'startOfTomorrow' as the $lt boundary is generally preferred for queries, 
+// but using 'lastMillisecondOfToday' works for the $lte boundary.
+const lastMillisecondOfToday = new Date(startOfTomorrow.getTime() - 1); 
+
+
     const [
       totalUsers,
       todayRegistered,
-      activeUsers1h
+      activeUsersToday // Renamed for clarity
     ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({
-        createdAt: { $gte: startOfToday, $lt: endOfToday }
+        // Counts users registered between 00:00:00 today (inclusive) and 00:00:00 tomorrow (exclusive)
+        createdAt: { $gte: startOfToday, $lt: startOfTomorrow }
       }),
-      // Active users based on last 1 hour ad views only
-      Activity.distinct('telegramId', {
-        type: 'ad_view',
-        createdAt: { $gte: last24Hours }
-      }).then(users => users.length)
+      Activity.aggregate([
+        {
+          // 1. FILTER: Match documents for today and 'ad_view' type
+          $match: {
+            type: 'ad_view',
+            createdAt: { $gte: startOfToday, $lt: startOfTomorrow }
+          }
+        },
+        {
+          // 2. GROUP: Group by the unique 'telegramId' field. 
+          // The _id field in the output documents will be the unique telegramId.
+          $group: {
+            _id: '$telegramId'
+          }
+        },
+        {
+          // 3. COUNT: Count the number of unique groups (which are the unique users)
+          $count: 'count' // Puts the final count into a field named 'count'
+        }
+      ]) 
     ]);
 
-    const inactiveUsers = totalUsers - activeUsers1h;
+    const finalActiveTelegramUsersToday = activeUsersToday.length > 0 
+    ? activeUsersToday[0].count 
+    : 0;
 
     // Get withdrawal statistics
     const [
@@ -65,17 +90,18 @@ export async function GET(request: NextRequest) {
       // Last 1 hour ad views from Activity collection
       Activity.countDocuments({
         type: 'ad_view',
-        createdAt: { $gte: last24Hours }
-      })
+        // Change: Use $gte (inclusive) start of today and $lt (exclusive) start of tomorrow.
+        createdAt: { $gte: startOfToday, $lt: startOfTomorrow } 
+    })
     ]);
 
     // Compile statistics
     const stats = {
       users: {
         total: totalUsers,
-        active: activeUsers1h,
+        active: finalActiveTelegramUsersToday,
         todayRegistered: todayRegistered,
-        inactive: inactiveUsers
+  
       },
       withdrawals: {
         total: totalWithdrawals,
@@ -89,6 +115,9 @@ export async function GET(request: NextRequest) {
         todayAdsViewed: todayAdsViewed
       }
     };
+
+
+    console.log(stats)
 
     return NextResponse.json({
       success: true,
