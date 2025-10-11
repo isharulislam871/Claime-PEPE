@@ -5,6 +5,21 @@ import { UserOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { API_CALL } from 'auth-fingerprint';
+
+// Utility function to format numbers with K, M, B suffixes
+const formatNumber = (num: number): string => {
+  if (num >= 1000000000) {
+    return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  }
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
+  return num.toString();
+};
 
 const { Option } = Select;
 
@@ -12,17 +27,30 @@ interface User {
   _id: string;
   telegramId: string;
   username: string;
+  firstName?: string;
+  lastName?: string;
   telegramUsername?: string;
+  profilePicUrl?: string;
   balance: number;
   totalEarned: number;
-  referralCode: string;
   referralCount: number;
-  referralEarnings: number;
-  status: string;
+  tasksCompletedToday: number;
+  lastActiveAt?: string;
   createdAt: string;
   updatedAt: string;
+  // Computed fields from API
+  accountAge: number;
+  isActive: boolean;
+  averageEarningsPerDay: number;
+  // Additional fields
   totalAdsViewed?: number;
-  tasksCompletedToday?: number;
+  totalTasks?: number;
+  ipAddress?: string;
+  userAgent?: string;
+  // Legacy/editable fields
+  referralCode?: string;
+  referralEarnings?: number;
+  status?: string;
   banReason?: string;
 }
 
@@ -42,26 +70,31 @@ export default function EditUserPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`/api/users/${userId}`);
-      const data = await response.json();
       
-      if (data.success && data.user) {
-        setUser(data.user);
+      const { response, status } = await API_CALL({
+        url: `/admin/users/${userId}`,
+        method: 'GET'
+      });
+      
+      if (status === 200 && response.success && response.data) {
+        setUser(response.data);
         // Populate form with user data
         form.setFieldsValue({
-          username: data.user.username,
-          telegramUsername: data.user.telegramUsername,
-          balance: data.user.balance,
-          totalEarned: data.user.totalEarned,
-          referralEarnings: data.user.referralEarnings,
-          status: data.user.status,
-          banReason: data.user.banReason,
-          tasksCompletedToday: data.user.tasksCompletedToday || 0
+          username: response.data.username,
+          firstName: response.data.firstName || '',
+          lastName: response.data.lastName || '',
+          telegramUsername: response.data.telegramUsername || '',
+          balance: response.data.balance,
+          totalEarned: response.data.totalEarned,
+          referralEarnings: response.data.referralEarnings || 0,
+          status: response.data.isActive ? 'active' : 'inactive',
+          banReason: response.data.banReason || '',
+          tasksCompletedToday: response.data.tasksCompletedToday || 0
         });
       } else {
-        throw new Error('User not found');
+        throw new Error(response.message || 'User not found');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching user details:', err);
       setError('Failed to load user details');
       message.error('Failed to load user details');
@@ -75,15 +108,15 @@ export default function EditUserPage() {
     try {
       setSaving(true);
       
-      const response = await fetch(`/api/admin/users`, {
+      const { response, status } = await API_CALL({
+        url: `/admin/users`,
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           telegramId: user?.telegramId,
           updates: {
             username: values.username,
+            firstName: values.firstName,
+            lastName: values.lastName,
             telegramUsername: values.telegramUsername,
             balance: values.balance,
             totalEarned: values.totalEarned,
@@ -92,18 +125,16 @@ export default function EditUserPage() {
             banReason: values.banReason,
             tasksCompletedToday: values.tasksCompletedToday
           }
-        }),
+        }
       });
-
-      const data = await response.json();
       
-      if (data.success) {
+      if (status === 200 && response.success) {
         message.success('User updated successfully');
         router.push(`/admin/dashboard/users/${userId}`);
       } else {
-        throw new Error(data.error || 'Failed to update user');
+        throw new Error(response.error || 'Failed to update user');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating user:', err);
       message.error('Failed to update user');
     } finally {
@@ -174,9 +205,14 @@ export default function EditUserPage() {
               <UserOutlined className="text-white text-2xl" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Edit User: {user.username}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Edit User: {user.firstName || user.lastName ? 
+                  `${user.firstName || ''} ${user.lastName || ''}`.trim() : 
+                  user.username
+                }
+              </h1>
               <p className="text-gray-600">
-                @{user.telegramUsername || user.telegramId} • ID: {user._id.slice(-8)}
+                @{user.username} • {user.telegramUsername ? `@${user.telegramUsername}` : user.telegramId} • ID: {user._id.slice(-8)}
               </p>
             </div>
           </div>
@@ -204,6 +240,22 @@ export default function EditUserPage() {
                 <Input placeholder="Enter username" />
               </Form.Item>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Form.Item
+                  label="First Name"
+                  name="firstName"
+                >
+                  <Input placeholder="Enter first name" />
+                </Form.Item>
+
+                <Form.Item
+                  label="Last Name"
+                  name="lastName"
+                >
+                  <Input placeholder="Enter last name" />
+                </Form.Item>
+              </div>
+
               <Form.Item
                 label="Telegram Username"
                 name="telegramUsername"
@@ -218,13 +270,14 @@ export default function EditUserPage() {
               >
                 <Select placeholder="Select status">
                   <Option value="active">Active</Option>
-                  <Option value="ban">Banned</Option>
-                  <Option value="suspend">Suspended</Option>
+                  <Option value="inactive">Inactive</Option>
+                  <Option value="banned">Banned</Option>
+                  <Option value="suspended">Suspended</Option>
                 </Select>
               </Form.Item>
 
               <Form.Item
-                label="Ban Reason"
+                label="Ban/Suspend Reason"
                 name="banReason"
                 tooltip="Only required if status is banned or suspended"
               >
@@ -303,25 +356,61 @@ export default function EditUserPage() {
               </div>
               <div>
                 <span className="font-medium text-gray-600">Referral Code:</span>
-                <div className="text-purple-600 font-mono">{user.referralCode}</div>
+                <div className="text-purple-600 font-mono">{user.referralCode || 'Not set'}</div>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Referral Count:</span>
-                <div className="text-green-600 font-semibold">{user.referralCount}</div>
+                <div className="text-green-600 font-semibold">{formatNumber(user.referralCount)}</div>
               </div>
               <div>
-                <span className="font-medium text-gray-600">Total Ads Viewed:</span>
-                <div className="text-orange-600 font-semibold">{user.totalAdsViewed || 0}</div>
+                <span className="font-medium text-gray-600">Account Age:</span>
+                <div className="text-blue-600 font-semibold">{user.accountAge} days</div>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Activity Status:</span>
+                <div className={`font-semibold ${user.isActive ? 'text-green-600' : 'text-orange-600'}`}>
+                  {user.isActive ? 'Active' : 'Inactive'}
+                </div>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Avg. Daily Earnings:</span>
+                <div className="text-indigo-600 font-semibold">{formatNumber(user.averageEarningsPerDay)} pts/day</div>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Join Date:</span>
                 <div className="text-gray-700">{new Date(user.createdAt).toLocaleDateString()}</div>
               </div>
               <div>
+                <span className="font-medium text-gray-600">Last Active:</span>
+                <div className="text-gray-700">
+                  {user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleDateString() : 'Never'}
+                </div>
+              </div>
+              <div>
                 <span className="font-medium text-gray-600">Last Updated:</span>
                 <div className="text-gray-700">{new Date(user.updatedAt).toLocaleDateString()}</div>
               </div>
+              <div>
+                <span className="font-medium text-gray-600">Total Ads Viewed:</span>
+                <div className="text-orange-600 font-semibold">{formatNumber(user.totalAdsViewed || 0)}</div>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Total Tasks:</span>
+                <div className="text-green-600 font-semibold">{formatNumber(user.totalTasks || 0)}</div>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">IP Address:</span>
+                <div className="text-gray-700 font-mono text-sm">{user.ipAddress || 'Not recorded'}</div>
+              </div>
             </div>
+            {user.userAgent && (
+              <div className="mt-4">
+                <span className="font-medium text-gray-600">User Agent:</span>
+                <div className="text-gray-700 text-sm break-all bg-gray-100 p-2 rounded mt-1">
+                  {user.userAgent}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Form Actions */}

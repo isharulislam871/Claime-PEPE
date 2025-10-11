@@ -170,6 +170,7 @@ export const networkIcons: Record<string, string> = {
     'ksm': '/svg/color/ksm.svg',
     'uni': '/svg/color/uni.svg',
     'comp': '/svg/color/comp.svg',
+    'bnb' : '/svg/color/bnb.svg',
     'crv': '/svg/color/crv.svg',
     'yfi': '/svg/color/yfi.svg',
     'snx': '/svg/color/snx.svg',

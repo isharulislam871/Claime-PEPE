@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Filter parameters
     const status = searchParams.get('status');
+    const username = searchParams.get('username');
     const userId = searchParams.get('userId');
     const telegramId = searchParams.get('telegramId');
     const method = searchParams.get('method');
@@ -42,8 +43,16 @@ export async function GET(request: NextRequest) {
     // Build query object
     const query: any = {};
     
-    if (status) {
+    if (status && status !== 'all') {
       query.status = status;
+    }
+    
+    if (username) {
+      query.$or = [
+        { username: { $regex: username, $options: 'i' } },
+        { telegramId: { $regex: username, $options: 'i' } },
+        { walletId: { $regex: username, $options: 'i' } }
+      ];
     }
     
     if (userId) {
@@ -65,11 +74,24 @@ export async function GET(request: NextRequest) {
     // Date range filter
     if (startDate || endDate) {
       query.createdAt = {};
-      if (startDate) {
-        query.createdAt.$gte = new Date(startDate);
+      if (startDate && startDate !== 'null' && startDate !== 'undefined') {
+        const start = new Date(startDate);
+        if (!isNaN(start.getTime())) {
+          query.createdAt.$gte = start;
+        }
       }
-      if (endDate) {
-        query.createdAt.$lte = new Date(endDate);
+      if (endDate && endDate !== 'null' && endDate !== 'undefined') {
+        const end = new Date(endDate);
+        if (!isNaN(end.getTime())) {
+          // Set to end of day
+          end.setHours(23, 59, 59, 999);
+          query.createdAt.$lte = end;
+        }
+      }
+      
+      // If no valid dates were added, remove the createdAt filter
+      if (Object.keys(query.createdAt).length === 0) {
+        delete query.createdAt;
       }
     }
 
@@ -112,11 +134,8 @@ export async function GET(request: NextRequest) {
         withdrawals,
         pagination: {
           currentPage: page,
-          totalPages,
           totalCount,
-          limit,
-          hasNextPage,
-          hasPrevPage
+          pageSize: limit
         },
         summary: {
           statusBreakdown: statusStats,
@@ -168,6 +187,9 @@ export async function POST(request: NextRequest) {
       method,
       walletId,
       currency: currency.toUpperCase(),
+      network: method, // Use method as network for now
+      address: walletId, // Use walletId as address for now
+      networkFee: 0,
       status: 'pending'
     });
 

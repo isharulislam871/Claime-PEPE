@@ -23,6 +23,8 @@ export interface IWithdrawal {
   userId: string;
   telegramId: string;
   username: string;
+  firstName?: string;
+  lastName?: string;
   amount: number;
   method: string;
   walletId: string;
@@ -34,6 +36,9 @@ export interface IWithdrawal {
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   transactionId?: string;
   failureReason?: string;
+  adminNotes?: string;
+  ipAddress?: string;
+  userAgent?: string;
   processedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -54,6 +59,14 @@ const WithdrawalSchema: Schema = new Schema({
     type: String,
     required: true,
     trim: true
+  },
+  firstName: {
+    type: String,
+    default: null
+  },
+  lastName: {
+    type: String,
+    default: null
   },
   amount: {
     type: Number,
@@ -107,6 +120,18 @@ const WithdrawalSchema: Schema = new Schema({
     sparse: true
   },
   failureReason: {
+    type: String,
+    default: null
+  },
+  adminNotes: {
+    type: String,
+    default: null
+  },
+  ipAddress: {
+    type: String,
+    default: null
+  },
+  userAgent: {
     type: String,
     default: null
   },

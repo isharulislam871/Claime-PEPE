@@ -26,9 +26,8 @@ import {
   EditOutlined,
   HistoryOutlined
 } from '@ant-design/icons';
-import { useEffect } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSelector, useDispatch } from 'react-redux';
 import { Image } from 'antd-mobile';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -40,98 +39,56 @@ dayjs.extend(relativeTime);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 import { coinIcons, networkIcons } from '@/lib/networkIcons';
-import { AppDispatch } from '@/modules/store';
-import {
-  fetchWithdrawalsRequest,
-  approveWithdrawalRequest,
-  rejectWithdrawalRequest,
-  setWithdrawalFilters,
-  clearWithdrawalError,
-  setSearchText,
-  setStatusFilter,
-  setDateRange,
-  clearFilters,
-  selectWithdrawals,
-  selectWithdrawalsLoading,
-  selectWithdrawalsError,
-  selectStatusStats,
-  selectTotalCount,
-  selectCurrentPage,
-  selectPageSize,
-  selectTotalCompletedAmount,
-  selectWithdrawalsFilters,
-  selectSearchText,
-  selectStatusFilter,
-  selectDateRange,
-  Withdrawal
-} from '@/modules/admin/withdrawals';
+import { fetchWithdrawalsRequest, setStatusFilter, setSearchText, setDateRange, clearFilters } from '@/modules/admin/withdrawals/actions';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/modules/store';
+// Types
+interface Withdrawal {
+  _id: string;
+  userId: string;
+  telegramId: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  amount: number;
+  method: string;
+  walletId: string;
+  currency: string;
+  status: string;
+  transactionId?: string;
+  failureReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  processedAt?: string;
+  adminNotes?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+ 
 
 const { Search } = Input;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
-const { confirm } = Modal;
+ 
 
 export default function WithdrawalsPage() {
   
+  
   const dispatch = useDispatch<AppDispatch>();
-  
-  // Redux state
-  const withdrawalsData = useSelector(selectWithdrawals);
-  const loading = useSelector(selectWithdrawalsLoading);
-  const error = useSelector(selectWithdrawalsError);
-  const statusStats = useSelector(selectStatusStats);
-  const totalCount = useSelector(selectTotalCount);
-  const currentPage = useSelector(selectCurrentPage);
-  const pageSize = useSelector(selectPageSize);
-  const totalCompletedAmount = useSelector(selectTotalCompletedAmount);
-  const filters = useSelector(selectWithdrawalsFilters);
-  
-  // UI state from Redux
-  const searchText = useSelector(selectSearchText);
-  const statusFilter = useSelector(selectStatusFilter);
-  const dateRange = useSelector(selectDateRange);
+  const { withdrawals, pagination, summary, searchText, statusFilter, dateRange  , loading } = useSelector((state: RootState) => state.admin.withdrawals);
 
-  // Fetch withdrawals using Redux
-  const fetchWithdrawals = (page = 1, limit = pageSize, additionalFilters = {}) => {
-    const filters = {
-      ...(statusFilter !== 'all' && { status: statusFilter }),
-      ...(searchText && { username: searchText }),
-      ...(dateRange && dateRange[0] && dateRange[1] && {
-        startDate: dateRange[0],
-        endDate: dateRange[1]
-      }),
-      ...additionalFilters
-    };
-    
-    dispatch(fetchWithdrawalsRequest(page, limit, filters));
-  };
-
+  useEffect(() => {
+    dispatch(fetchWithdrawalsRequest(1, 25));
+  }, [dispatch]);
+ 
   const router = useRouter();
 
-  useEffect(() => {
-    fetchWithdrawals(currentPage, pageSize);
-  }, [currentPage, pageSize, statusFilter, dateRange]);
-  
-  // Debounced search effect
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchWithdrawals(1, pageSize);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [searchText, dispatch, pageSize]);
-  
-  // Handle Redux errors
-  useEffect(() => {
-    if (error) {
-      message.error(error);
-      dispatch(clearWithdrawalError());
-    }
-  }, [error, dispatch]);
-
+ 
   
 
-  const getStatusColor = (status: string) => {
+  // Memoized utility functions
+  const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'pending': return 'orange';
       case 'processing': return 'blue';
@@ -140,10 +97,10 @@ export default function WithdrawalsPage() {
       case 'cancelled': return 'red';
       default: return 'default';
     }
-  };
+  }, []);
 
-  // Format date with timezone support and relative time
-  const formatDateTime = (dateString: string) => {
+  // Format date with timezone support and relative time - memoized
+  const formatDateTime = useCallback((dateString: string) => {
     const date = dayjs(dateString);
     const now = dayjs();
     const diffInHours = now.diff(date, 'hour');
@@ -161,11 +118,12 @@ export default function WithdrawalsPage() {
         full: date.format('YYYY-MM-DD HH:mm:ss')
       };
     }
-  };
+  }, []);
 
    
 
-  const columns = [
+  // Memoized columns array to prevent re-renders
+  const columns = useMemo(() => [
     {
       title: (
         <div className="flex items-center gap-2">
@@ -351,9 +309,7 @@ export default function WithdrawalsPage() {
                     {dateInfo.relative}
                   </span>
                 </div>
-                <div className="text-xs text-gray-600 font-mono">
-                  {dateInfo.absolute}
-                </div>
+           
             
               </div>
            
@@ -393,9 +349,7 @@ export default function WithdrawalsPage() {
                     />
                   )}
                 </div>
-                <div className="text-xs text-gray-600 font-mono">
-                  {dateInfo.absolute}
-                </div>
+             
                 {wasUpdated && (
                   <div className="text-xs text-amber-600 mt-1 font-medium">
                     Modified
@@ -428,22 +382,53 @@ export default function WithdrawalsPage() {
         </div>
       ),
     },
-  ];
-
-  // Data is now filtered on the server side, so we use withdrawalsData directly
-  const filteredData = withdrawalsData || [];
-
-  
+  ], [formatDateTime, getStatusColor, router]);
 
  
+ 
 
-  const handlePageChange = (page: number, size?: number) => {
-    fetchWithdrawals(page, size || pageSize);
-  };
-  
-  const handleRefresh = () => {
-    fetchWithdrawals(currentPage, pageSize);
-  };
+  const handleStatusChange = useCallback((value: string) => {
+    dispatch(setStatusFilter(value));
+    dispatch(fetchWithdrawalsRequest(1, pagination?.pageSize || 25, { status: value }));
+  }, [dispatch, pagination?.pageSize]);
+
+  const handleDateRangeChange = useCallback((dates: any) => {
+    const dateRange = dates ? [dates[0].format('YYYY-MM-DD'), dates[1].format('YYYY-MM-DD')] as [string, string] : null;
+    dispatch(setDateRange(dateRange));
+    dispatch(fetchWithdrawalsRequest(1, pagination?.pageSize || 25, { 
+      status: statusFilter, 
+      startDate: dateRange?.[0], 
+      endDate: dateRange?.[1] 
+    }));
+  }, [dispatch, pagination?.pageSize, statusFilter]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    dispatch(setSearchText(value));
+    dispatch(fetchWithdrawalsRequest(1, pagination?.pageSize || 25, { 
+      status: statusFilter, 
+      username: value,
+      startDate: dateRange?.[0], 
+      endDate: dateRange?.[1] 
+    }));
+  }, [dispatch, pagination?.pageSize, statusFilter, dateRange]);
+
+  const handleClearFilters = useCallback(() => {
+    dispatch(clearFilters());
+    dispatch(fetchWithdrawalsRequest(1, pagination?.pageSize || 25));
+  }, [dispatch, pagination?.pageSize]);
+
+  const handleRefresh = useCallback(() => {
+    dispatch(fetchWithdrawalsRequest(
+      pagination?.currentPage || 1, 
+      pagination?.pageSize || 25, 
+      { 
+        status: statusFilter, 
+        username: searchText,
+        startDate: dateRange?.[0], 
+        endDate: dateRange?.[1] 
+      }
+    ));
+  }, [dispatch, pagination?.currentPage, pagination?.pageSize, statusFilter, searchText, dateRange]);
   
 
   return (
@@ -454,68 +439,82 @@ export default function WithdrawalsPage() {
         {/* Binance-style Stats Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title={<span className="text-gray-600 font-medium">Total Withdrawals</span>}
-              value={totalCount}
-              prefix={<WalletOutlined className="text-blue-500" />}
-              valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
-            />
-            <div className="mt-2 flex items-center text-xs text-green-600">
-              <ArrowUpOutlined className="mr-1" />
-              +12.5% from last month
-            </div>
+            <Spin spinning={loading} size="small">
+              <Statistic
+                title={<span className="text-gray-600 font-medium">Total Withdrawals</span>}
+                value={pagination?.totalCount || 0}
+                prefix={<WalletOutlined className="text-blue-500" />}
+                valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
+              />
+            </Spin>
           </Card>
           
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title={<span className="text-gray-600 font-medium">Pending Review</span>}
-              value={statusStats.pending || 0}
-              prefix={<ClockCircleOutlined className="text-orange-500" />}
-              valueStyle={{ color: '#fa8c16', fontSize: '24px', fontWeight: 'bold' }}
-            />
-            <div className="mt-2">
-              <Progress percent={((statusStats.pending || 0) / totalCount * 100)} size="small" strokeColor="#fa8c16" />
-            </div>
+            <Spin spinning={loading} size="small">
+              <Statistic
+                title={<span className="text-gray-600 font-medium">Pending Review</span>}
+                value={summary?.statusBreakdown?.find(s => s._id === 'pending')?.count || 0}
+                prefix={<ClockCircleOutlined className="text-orange-500" />}
+                valueStyle={{ color: '#fa8c16', fontSize: '24px', fontWeight: 'bold' }}
+              />
+              <div className="mt-2">
+                <Progress 
+                  percent={pagination?.totalCount ? Math.round((summary?.statusBreakdown?.find(s => s._id === 'pending')?.count || 0) / pagination.totalCount * 100) : 0} 
+                  size="small" 
+                  strokeColor="#fa8c16" 
+                />
+              </div>
+            </Spin>
           </Card>
           
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title={<span className="text-gray-600 font-medium">Processing</span>}
-              value={statusStats.processing || 0}
-              prefix={<SecurityScanOutlined className="text-blue-500" />}
-              valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
-            />
-            <div className="mt-2">
-              <Progress percent={((statusStats.processing || 0) / totalCount * 100)} size="small" strokeColor="#1890ff" />
-            </div>
+            <Spin spinning={loading} size="small">
+              <Statistic
+                title={<span className="text-gray-600 font-medium">Processing</span>}
+                value={summary?.statusBreakdown?.find(s => s._id === 'processing')?.count || 0}
+                prefix={<SecurityScanOutlined className="text-blue-500" />}
+                valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
+              />
+              <div className="mt-2">
+                <Progress 
+                  percent={pagination?.totalCount ? Math.round((summary?.statusBreakdown?.find(s => s._id === 'processing')?.count || 0) / pagination.totalCount * 100) : 0} 
+                  size="small" 
+                  strokeColor="#1890ff" 
+                />
+              </div>
+            </Spin>
           </Card>
           
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title={<span className="text-gray-600 font-medium">Completed</span>}
-              value={statusStats.completed || 0}
-              prefix={<CheckCircleOutlined className="text-green-500" />}
-              valueStyle={{ color: '#52c41a', fontSize: '24px', fontWeight: 'bold' }}
-            />
-            <div className="mt-2 flex items-center text-xs text-green-600">
-              <ArrowUpOutlined className="mr-1" />
-              +8.2% success rate
-            </div>
+            <Spin spinning={loading} size="small">
+              <Statistic
+                title={<span className="text-gray-600 font-medium">Completed</span>}
+                value={summary?.statusBreakdown?.find(s => s._id === 'completed')?.count || 0}
+                prefix={<CheckCircleOutlined className="text-green-500" />}
+                valueStyle={{ color: '#52c41a', fontSize: '24px', fontWeight: 'bold' }}
+              />
+              <div className="mt-2 flex items-center text-xs text-green-600">
+                <ArrowUpOutlined className="mr-1" />
+                {pagination?.totalCount ? Math.round((summary?.statusBreakdown?.find(s => s._id === 'completed')?.count || 0) / pagination.totalCount * 100) : 0}% success rate
+              </div>
+            </Spin>
           </Card>
           
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title={<span className="text-gray-600 font-medium">Total Volume</span>}
-              value={totalCompletedAmount}
-              prefix={<DollarOutlined className="text-purple-500" />}
-              suffix="USDT"
-              precision={2}
-              valueStyle={{ color: '#722ed1', fontSize: '24px', fontWeight: 'bold' }}
-            />
-            <div className="mt-2 flex items-center text-xs text-purple-600">
-              <ArrowUpOutlined className="mr-1" />
-              +15.3% volume growth
-            </div>
+            <Spin spinning={loading} size="small">
+              <Statistic
+                title={<span className="text-gray-600 font-medium">Total Volume</span>}
+                value={summary?.totalCompletedAmount || 0}
+                prefix={<DollarOutlined className="text-purple-500" />}
+                suffix="USDT"
+                precision={2}
+                valueStyle={{ color: '#722ed1', fontSize: '24px', fontWeight: 'bold' }}
+              />
+              <div className="mt-2 flex items-center text-xs text-purple-600">
+                <ArrowUpOutlined className="mr-1" />
+                Completed withdrawals only
+              </div>
+            </Spin>
           </Card>
         </div>
 
@@ -530,15 +529,16 @@ export default function WithdrawalsPage() {
                   style={{ width: 320 }}
                   size="large"
                   prefix={<SearchOutlined className="text-gray-400" />}
-                  onChange={(e) => dispatch(setSearchText(e.target.value))}
                   value={searchText}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onSearch={handleSearchChange}
                   className="border-gray-300 hover:border-blue-400 focus:border-blue-500"
                 />
               </div>
               
               <Select
                 value={statusFilter}
-                onChange={(value) => dispatch(setStatusFilter(value))}
+                onChange={handleStatusChange}
                 style={{ width: 160 }}
                 size="large"
                 className="border-gray-300"
@@ -578,13 +578,7 @@ export default function WithdrawalsPage() {
               <RangePicker 
                 placeholder={['Start Date', 'End Date']} 
                 value={dateRange ? [dayjs(dateRange[0]), dayjs(dateRange[1])] : null}
-                onChange={(dates) => {
-                  if (dates && dates[0] && dates[1]) {
-                    dispatch(setDateRange([dates[0].toISOString(), dates[1].toISOString()]));
-                  } else {
-                    dispatch(setDateRange(null));
-                  }
-                }}
+                onChange={handleDateRangeChange}
                 size="large"
                 className="border-gray-300"
               />
@@ -594,15 +588,13 @@ export default function WithdrawalsPage() {
               <Button
                 size="small"
                 icon={<FilterOutlined />}
-                onClick={() => dispatch(clearFilters())}
+                onClick={handleClearFilters}
                 disabled={!searchText && statusFilter === 'all' && !dateRange}
                 title="Clear all filters"
               >
                 Clear Filters
               </Button>
-              <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-                <span className="font-medium">{withdrawalsData?.length || 0}</span> of <span className="font-medium">{totalCount}</span> withdrawals
-              </div>
+              
             </div>
           </div>
         </Card>
@@ -615,33 +607,37 @@ export default function WithdrawalsPage() {
               <h3 className="text-lg font-semibold text-gray-900">Withdrawal Requests</h3>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="small" icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>
+              <Button 
+                size="small" 
+                icon={<ReloadOutlined className={loading ? 'animate-spin' : ''} />} 
+                onClick={handleRefresh}
+                loading={loading}
+              >
                 Refresh
               </Button>
             </div>
           </div>
           
-          {loading ? (
-            <div className="flex flex-col justify-center items-center py-20">
-              <Spin size="large" />
-              <div className="mt-4 text-gray-500">Loading withdrawal data...</div>
-            </div>
-          ) : (
+         
             <Table
               columns={columns}
-              dataSource={filteredData}
+              dataSource={withdrawals}
+              loading={loading}
               pagination={{
-                current: currentPage,
-                pageSize: pageSize,
-                total: totalCount,
+                current: pagination?.currentPage || 1,
+                pageSize: pagination?.pageSize || 25,
+                total: pagination?.totalCount || 0,
                 showSizeChanger: true,
                 showQuickJumper: true,
-                pageSizeOptions: ['10', '25', '50', '100', '500'],
-                showTotal: (total, range) =>
-                  `Showing ${range[0]}-${range[1]} of ${total} withdrawal requests`,
-                onChange: handlePageChange,
-                onShowSizeChange: handlePageChange,
-                className: "border-t border-gray-200"
+                showTotal: (total, range) => 
+                  `${range[0]}-${range[1]} of ${total} withdrawals`,
+                pageSizeOptions: ['10', '25', '50', '100'],
+                onChange: (page, pageSize) => {
+                  dispatch(fetchWithdrawalsRequest(page, pageSize));
+                },
+                onShowSizeChange: (current, size) => {
+                  dispatch(fetchWithdrawalsRequest(1, size));
+                }
               }}
               className="overflow-x-auto"
               scroll={{ x: 1400 }}
@@ -652,7 +648,7 @@ export default function WithdrawalsPage() {
                 index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
               }
             />
-          )}
+       
         </Card>
 
       </div>

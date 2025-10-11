@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { Card, Button, Tag, Modal, Input, Select, message, Descriptions, Timeline, Tooltip, Alert, Spin, Avatar, Steps, Space } from 'antd';
@@ -53,6 +53,10 @@ export default function WithdrawalDetailsPage() {
   const adminNotes = useSelector(selectAdminNotes);
   const canUpdateStatus = useSelector(selectCanUpdateStatus);
   const updateSummary = useSelector(selectUpdateSummary);
+  
+  // Local loading states
+  const [copyLoading, setCopyLoading] = useState<string | null>(null);
+  const [explorerLoading, setExplorerLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (withdrawalId) {
@@ -91,9 +95,16 @@ export default function WithdrawalDetailsPage() {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    message.success(`${label} copied to clipboard`);
+  const copyToClipboard = async (text: string, label: string) => {
+    setCopyLoading(label);
+    try {
+      await navigator.clipboard.writeText(text);
+      message.success(`${label} copied to clipboard`);
+    } catch (error) {
+      message.error(`Failed to copy ${label}`);
+    } finally {
+      setTimeout(() => setCopyLoading(null), 500); // Brief loading state for visual feedback
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -164,12 +175,14 @@ export default function WithdrawalDetailsPage() {
     ];
   };
 
-  const viewOnBlockchain = (explorerUrl?: string) => {
+  const viewOnBlockchain = (explorerUrl?: string, explorerName?: string) => {
     if (withdrawal?.transactionId) {
+      setExplorerLoading(explorerName || 'default');
       const explorers = getBlockchainExplorers(withdrawal.currency, withdrawal.transactionId);
       const url = explorerUrl || explorers[0]?.url;
       if (url) {
         window.open(url, '_blank');
+        setTimeout(() => setExplorerLoading(null), 1000); // Brief loading state
       }
     }
   };
@@ -188,8 +201,9 @@ export default function WithdrawalDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-96">
+      <div className="flex flex-col justify-center items-center min-h-96 space-y-4">
         <Spin size="large" />
+        <div className="text-gray-500 text-sm">Loading withdrawal details...</div>
       </div>
     );
   }
@@ -268,6 +282,7 @@ export default function WithdrawalDetailsPage() {
                 size="small" 
                 icon={<CopyOutlined />}
                 onClick={() => copyToClipboard(withdrawal._id, 'Withdrawal ID')}
+                loading={copyLoading === 'Withdrawal ID'}
                 className="text-blue-500"
               />
             </div>
@@ -278,6 +293,8 @@ export default function WithdrawalDetailsPage() {
           type="primary" 
           icon={<EditOutlined />}
           onClick={() => dispatch(setUpdateModalVisible(true))}
+          loading={updating}
+          disabled={updating}
         >
           Update Status
         </Button>
@@ -360,6 +377,7 @@ export default function WithdrawalDetailsPage() {
               <Button 
                 icon={<CopyOutlined />} 
                 onClick={() => copyToClipboard(withdrawal.walletId, 'Wallet Address')}
+                loading={copyLoading === 'Wallet Address'}
               />
             </div>
           </Card>
@@ -374,6 +392,7 @@ export default function WithdrawalDetailsPage() {
                 <Button 
                   icon={<CopyOutlined />} 
                   onClick={() => copyToClipboard(withdrawal.transactionId!, 'Transaction ID')}
+                  loading={copyLoading === 'Transaction ID'}
                 />
               </div>
             </Card>
@@ -472,17 +491,17 @@ export default function WithdrawalDetailsPage() {
                   {withdrawal.method?.toUpperCase() || 'MAINNET'}
                 </Tag>
               </div>
-              
               {withdrawal.transactionId && (
                 <div className="space-y-2">
                   <div className="text-sm font-medium text-gray-700 mb-2">Blockchain Explorers</div>
                   {getBlockchainExplorers(withdrawal.currency, withdrawal.transactionId).map((explorer, index) => (
-                    <Button
-                      key={index}
+                    <Button 
+                      type="link" 
                       block
                       size="small"
                       icon={<GlobalOutlined />}
-                      onClick={() => viewOnBlockchain(explorer.url)}
+                      onClick={() => viewOnBlockchain(explorer.url, explorer.name)}
+                      loading={explorerLoading === explorer.name}
                       className="text-left justify-start"
                     >
                       View on {explorer.name}

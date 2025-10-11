@@ -207,6 +207,11 @@ export const adminWithdrawalsReducer = (
         currentWithdrawal: action.payload,
         updateModalVisible: false,
         confirmModalVisible: false,
+        // Clear form fields after successful update
+        newStatus: '',
+        transactionId: '',
+        failureReason: '',
+        adminNotes: '',
         // Update the withdrawal in the list if it exists
         withdrawals: state.withdrawals.map(withdrawal =>
           withdrawal._id === action.payload._id ? action.payload : withdrawal

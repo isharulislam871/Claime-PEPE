@@ -19,6 +19,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatTimestampWithTooltip } from '@/lib/utils/timeFormat';
+import { API_CALL } from 'auth-fingerprint';
 
 interface Activity {
   _id: string;
@@ -50,14 +51,14 @@ export default function ActivityDetailsPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`/api/activities/${activityId}`);
-      const data = await response.json();
+      const { response  , status }= await API_CALL({ url : `/admin/activities/${activityId}` , method : 'GET'})
       
-      if (data.success && data.activity) {
-        setActivity(data.activity);
+      if (status === 200 && response.success && response.data) {
+        setActivity(response.data);
       } else {
         throw new Error('Activity not found');
       }
+       
     } catch (err) {
       console.error('Error fetching activity details:', err);
       setError('Failed to load activity details');

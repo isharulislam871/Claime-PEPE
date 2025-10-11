@@ -28,7 +28,7 @@ function* fetchTasksSaga(): SagaIterator {
       method: 'GET',
       params: { hash, signature, timestamp }
     })) as APIResponse;
-    yield put(fetchTasksSuccess(response?.result?.result?.tasks || []));
+    yield put(fetchTasksSuccess(response?.tasks || []));
 
   } catch (error: unknown) {
     if (error instanceof Error) {

@@ -36,24 +36,25 @@ function* fetchWithdrawalsSaga(action: FetchWithdrawalsRequestAction): Generator
     ...filters
   });
 
-  const { response, status }: any = yield call(API_CALL, {
-    url: `/admin/withdrawals?${queryParams}`,
-    method: 'GET'
-  });
+  try {
+    const { response, status }: any = yield call(API_CALL, {
+      url: `/admin/withdrawals?${queryParams}`,
+      method: 'GET'
+    });
 
-  console.log(response.data);
-
-
-
-  if (status === 200 && response.success && response.data) {
-    yield put(fetchWithdrawalsSuccess(
-      response.data.withdrawals,
-      response.data.pagination,
-      response.data.summary
-    ));
-  } else {
-    yield put(fetchWithdrawalsFailure(response.message || 'Failed to fetch withdrawals'));
-    toast.error(response.message || 'Failed to fetch withdrawals');
+    if (status === 200 && response.success && response.data) {
+      yield put(fetchWithdrawalsSuccess(
+        response.data.withdrawals,
+        response.data.pagination,
+        response.data.summary
+      ));
+    } else {
+      yield put(fetchWithdrawalsFailure(response.error || 'Failed to fetch withdrawals'));
+      toast.error(response.error || 'Failed to fetch withdrawals');
+    }
+  } catch (error: any) {
+    yield put(fetchWithdrawalsFailure(error.message || 'Failed to fetch withdrawals'));
+    toast.error(error.message || 'Failed to fetch withdrawals');
   }
 }
 
@@ -96,41 +97,56 @@ function* rejectWithdrawalSaga(action: RejectWithdrawalRequestAction): Generator
 function* fetchWithdrawalDetailsSaga(action: FetchWithdrawalDetailsRequestAction): Generator<any, void, any> {
   const withdrawalId = action.payload;
 
-  const { response, status }: any = yield call(API_CALL, {
-    url: `/admin/withdrawals/${withdrawalId}`,
-    method: 'GET'
-  });
+  try {
+    const { response, status }: any = yield call(API_CALL, {
+      url: `/admin/withdrawals/${withdrawalId}`,
+      method: 'GET'
+    });
 
-  if (status === 200 && response.success) {
-    yield put(fetchWithdrawalDetailsSuccess(response.withdrawal));
-  } else {
-    yield put(fetchWithdrawalDetailsFailure(response.message || 'Failed to fetch withdrawal details'));
-    toast.error(response.message || 'Failed to fetch withdrawal details');
+    if (status === 200 && response.success) {
+      yield put(fetchWithdrawalDetailsSuccess(response.data));
+    } else {
+      yield put(fetchWithdrawalDetailsFailure(response.error || 'Failed to fetch withdrawal details'));
+      toast.error(response.error || 'Failed to fetch withdrawal details');
+    }
+  } catch (error: any) {
+    yield put(fetchWithdrawalDetailsFailure(error.message || 'Failed to fetch withdrawal details'));
+    toast.error(error.message || 'Failed to fetch withdrawal details');
   }
 }
 
 function* updateWithdrawalStatusSaga(action: UpdateWithdrawalStatusRequestAction): Generator<any, void, any> {
   const { withdrawalId, status, transactionId, failureReason, adminNotes } = action.payload;
 
-  const { response, status: responseStatus }: any = yield call(API_CALL, {
-    url: '/admin/update_withdrawal',
-    method: 'POST',
-    body: {
-      action: 'update_withdrawal',
-      withdrawalId,
-      status,
-      transactionId: status === 'completed' ? transactionId : undefined,
-      failureReason: (status === 'failed' || status === 'cancelled') ? failureReason : undefined,
-      adminNotes
-    }
-  });
+  try {
+    const { response, status: responseStatus }: any = yield call(API_CALL, {
+      url: `/admin/update_withdrawal`,
+      method: 'POST',
+      body: {
+        status,
+        transactionId: status === 'completed' ? transactionId : undefined,
+        failureReason: (status === 'failed' || status === 'cancelled') ? failureReason : undefined,
+        adminNotes,
+        withdrawalId
+      }
+    });
 
-  if (responseStatus === 200 && response.success) {
-    yield put(updateWithdrawalStatusSuccess(response.withdrawal));
-    toast.success('Withdrawal updated successfully');
-  } else {
-    yield put(updateWithdrawalStatusFailure(response.error || 'Failed to update withdrawal'));
-    toast.error(response.error || 'Failed to update withdrawal');
+    if (responseStatus === 200 && response.success) {
+      yield put(updateWithdrawalStatusSuccess(response.withdrawal));
+      toast.success('Withdrawal updated successfully');
+      
+      // Also refresh the withdrawal details to get the latest data
+      yield put({ type: FETCH_WITHDRAWAL_DETAILS_REQUEST, payload: withdrawalId });
+      
+      // Refresh the withdrawals list to update the main table
+      yield put({ type: FETCH_WITHDRAWALS_REQUEST, payload: { page: 1, limit: 25 } });
+    } else {
+      yield put(updateWithdrawalStatusFailure(response.error || 'Failed to update withdrawal'));
+      toast.error(response.error || 'Failed to update withdrawal');
+    }
+  } catch (error: any) {
+    yield put(updateWithdrawalStatusFailure(error.message || 'Failed to update withdrawal'));
+    toast.error(error.message || 'Failed to update withdrawal');
   }
 }
 
