@@ -6,12 +6,22 @@ import { signIn, getSession } from "next-auth/react";
 import { UserOutlined, LockOutlined, EyeOutlined, EyeInvisibleOutlined, SafetyOutlined, ThunderboltOutlined, BarChartOutlined } from '@ant-design/icons'
 import { toast } from 'react-toastify';
 import { API_CALL , generateSignature   } from 'auth-fingerprint';
+import isMobile from 'is-mobile';
 
 
 const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard';
+  
+  // Detect mobile device and set appropriate default callback URL
+  const getDefaultCallbackUrl = () => {
+    if (typeof window !== 'undefined') {
+      return isMobile() ? '/admin' : '/admin/dashboard';
+    }
+    return '/admin/dashboard'; // fallback for SSR
+  };
+  
+  const callbackUrl = searchParams.get('callbackUrl') || getDefaultCallbackUrl();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -21,6 +31,14 @@ const LoginForm = () => {
   const [error, setError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+  // Detect mobile device on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsMobileDevice(isMobile());
+    }
+  }, []);
 
   // Check existing session on component mount
   useEffect(() => {
@@ -49,7 +67,7 @@ const LoginForm = () => {
       if(status === 200){
          toast.success(response.message);
          setIsLoading(false)
-          router.push(`/auth/otp?type=login`);
+          router.push(`/auth/otp?type=login&callbackUrl=${encodeURIComponent(callbackUrl)}`);
         return;
       }
       toast.error(response.error);
@@ -103,6 +121,10 @@ const LoginForm = () => {
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Stter Admin Panel</h1>
             <p className="text-gray-400">Sign in to your dashboard</p>
+            {/* Device Detection Indicator */}
+            <div className="mt-2 text-xs text-gray-500">
+              Device: {isMobileDevice ? 'Mobile' : 'Desktop'} • Redirect: {callbackUrl}
+            </div>
           </div>
 
           {/* Mobile Form */}
@@ -233,6 +255,10 @@ const LoginForm = () => {
               </div>
               <h2 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">Welcome Back</h2>
               <p className="text-gray-400">Sign in to Stter Admin Panel</p>
+              {/* Device Detection Indicator */}
+              <div className="mt-2 text-xs text-gray-500">
+                Device: {isMobileDevice ? 'Mobile' : 'Desktop'} • Redirect: {callbackUrl}
+              </div>
             </div>
 
             {/* Enhanced Form */}

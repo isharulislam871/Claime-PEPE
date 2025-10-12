@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `Success! ${reward} Point has been added to your balance.${referrerUpdated ? ` Your referrer earned ${commissionAmount} Point commission.` : ''}`,
-      user,
+      user: {...user.toObject(), adsWatchedToday : adsCount24h },
       reward,
       commission: referrerUpdated ? {
         amount: commissionAmount,

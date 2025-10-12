@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Typography, message } from 'antd';
-import AdsSettings from '@/components/AdsSettings';
+import AdsSettings from '@/components/admin/adNetworks';
 import { toast } from 'react-toastify';
 
 const { Title, Text } = Typography;

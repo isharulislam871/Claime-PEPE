@@ -292,9 +292,22 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    if (updates.status && !['active', 'ban', 'suspend'].includes(updates.status)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid status value' },
+        { status: 400 }
+      );
+    }
+
+    if (updates.balance && typeof updates.balance !== 'number') {
+      return NextResponse.json(
+        { success: false, error: 'Invalid balance value' },
+        { status: 400 }
+      );
+    } 
     const user = await User.findOneAndUpdate(
       { telegramId },
-      { $set: updates },
+      { $set:  updates  },
       { new: true, runValidators: true }
     );
 

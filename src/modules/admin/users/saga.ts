@@ -121,7 +121,7 @@ function* refreshUsersSaga(action: RefreshUsersRequestAction): Generator<any, vo
     // Make API call using API_CALL
     const { response }: any = yield call(API_CALL, {
       method: 'GET',
-      url: `/api/admin/users?${params.toString()}`,
+      url: `/admin/users?${params.toString()}`,
     });
 
     if (response.success && response.data) {

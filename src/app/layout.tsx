@@ -27,20 +27,20 @@ export const viewport = {
 
 export const metadata: Metadata = {
   title: 'Stter Admin Panel - Telegram Rewards App',
-  description: 'Complete tasks and earn PEPE coins in this Telegram mini app',
+  description: 'Complete tasks and earn up to $100 in pts coins in this Telegram mini app',
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: 'website',
-    siteName: 'TaskUp',
-    title: 'TaskUp - Telegram Rewards App',
-    description: 'Complete tasks and earn PEPE coins',
+    siteName: 'Stter Admin Panel',
+    title: 'Stter Admin Panel - Telegram Rewards App',
+    description: 'Complete tasks and earn up to $100 in pts coins',
   },
   twitter: {
     card: 'summary',
-    title: 'TaskUp - Telegram Rewards App',
-    description: 'Complete tasks and earn PEPE coins',
+    title: 'Stter Admin Panel - Telegram Rewards App',
+    description: 'Complete tasks and earn up to $100 in pts coins',
   },
 }
 
@@ -50,11 +50,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en"  >
       <head>
         
       </head>
-      <body className={`${poppins.variable} font-sans bg-gray-50`}>
+      <body className={`${poppins.variable} font-sans bg-gray-50 dark:bg-gray-900`}  >
  
           <AuthProvider>
             <ReduxProvider>

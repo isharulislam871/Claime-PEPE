@@ -3,15 +3,27 @@
 import { CloseOutlined, SaveOutlined } from "@ant-design/icons";
 import { Button, Input, Popup, Selector, Toast } from "antd-mobile";
 import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from '@/modules/store';
+import { refreshUsersRequest } from '@/modules/admin/users/actions';
 
 interface User {
-    id: string;
+    _id: string;
+    telegramId: string;
     username: string;
-    email: string;
+    telegramUsername?: string;
     balance: number;
-    tasksCompleted: number;
-    joinDate: string;
+    totalEarned: number;
+    referralCode: string;
+    referralCount: number;
+    referralEarnings: number;
     status: string;
+    createdAt: string;
+    updatedAt: string;
+    totalAdsViewed?: number;
+    ipAddress?: string;
+    firstName?: string;
+    lastName?: string;
 }
 
 interface UserDetailsEditPopupProps {
@@ -25,10 +37,11 @@ const statusOptions = [
     { label: 'Active', value: 'active' },
     { label: 'Inactive', value: 'inactive' },
     { label: 'Banned', value: 'banned' },
-    { label: 'Paused', value: 'paused' }
+    { label: 'Suspended', value: 'suspended' }
 ];
 
 export const UserDetailsEditPopup = ({ visible, user, onClose, onSave }: UserDetailsEditPopupProps) => {
+    const dispatch = useDispatch<AppDispatch>();
     const [formData, setFormData] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -46,19 +59,24 @@ export const UserDetailsEditPopup = ({ visible, user, onClose, onSave }: UserDet
             Toast.show({ content: 'Username is required', icon: 'fail' });
             return;
         }
-        if (!formData.email.trim()) {
-            Toast.show({ content: 'Email is required', icon: 'fail' });
-            return;
-        }
         if (formData.balance < 0) {
             Toast.show({ content: 'Balance cannot be negative', icon: 'fail' });
+            return;
+        }
+        if (formData.totalEarned < 0) {
+            Toast.show({ content: 'Total earned cannot be negative', icon: 'fail' });
             return;
         }
 
         setLoading(true);
         try {
-            // Simulate API call
+            // TODO: Implement actual API call to update user
+            // For now, simulate API call and refresh data
             await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Refresh users data to get updated information
+            dispatch(refreshUsersRequest());
+            
             onSave(formData);
             Toast.show({ content: 'User updated successfully', icon: 'success' });
             onClose();
@@ -121,6 +139,9 @@ export const UserDetailsEditPopup = ({ visible, user, onClose, onSave }: UserDet
                             <h4 className="font-semibold text-xl" style={{ color: '#111827' }}>
                                 Editing: @{formData.username}
                             </h4>
+                            <p className="text-sm" style={{ color: '#6B7280' }}>
+                                {formData.telegramUsername ? `@${formData.telegramUsername}` : `ID: ${formData.telegramId}`}
+                            </p>
                         </div>
 
                         {/* Edit Form */}
@@ -146,13 +167,40 @@ export const UserDetailsEditPopup = ({ visible, user, onClose, onSave }: UserDet
 
                                     <div>
                                         <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
-                                            Email Address
+                                            Telegram Username
                                         </label>
                                         <Input
-                                            value={formData.email}
-                                            onChange={(value) => handleInputChange('email', value)}
-                                            placeholder="Enter email address"
-                                            type="email"
+                                            value={formData.telegramUsername || ''}
+                                            onChange={(value) => handleInputChange('telegramUsername', value)}
+                                            placeholder="Enter telegram username"
+                                            style={{ 
+                                                '--color': '#111827'
+                                            } as any}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+                                            First Name
+                                        </label>
+                                        <Input
+                                            value={formData.firstName || ''}
+                                            onChange={(value) => handleInputChange('firstName', value)}
+                                            placeholder="Enter first name"
+                                            style={{ 
+                                                '--color': '#111827'
+                                            } as any}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+                                            Last Name
+                                        </label>
+                                        <Input
+                                            value={formData.lastName || ''}
+                                            onChange={(value) => handleInputChange('lastName', value)}
+                                            placeholder="Enter last name"
                                             style={{ 
                                                 '--color': '#111827'
                                             } as any}
@@ -199,12 +247,57 @@ export const UserDetailsEditPopup = ({ visible, user, onClose, onSave }: UserDet
 
                                     <div>
                                         <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
-                                            Tasks Completed
+                                            Total Earned
                                         </label>
                                         <Input
-                                            value={formData.tasksCompleted.toString()}
-                                            onChange={(value) => handleInputChange('tasksCompleted', parseInt(value) || 0)}
-                                            placeholder="Enter tasks completed"
+                                            value={formData.totalEarned.toString()}
+                                            onChange={(value) => handleInputChange('totalEarned', parseInt(value) || 0)}
+                                            placeholder="Enter total earned points"
+                                            type="number"
+                                            style={{ 
+                                                '--color': '#111827'
+                                            } as any}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+                                            Referral Count
+                                        </label>
+                                        <Input
+                                            value={formData.referralCount.toString()}
+                                            onChange={(value) => handleInputChange('referralCount', parseInt(value) || 0)}
+                                            placeholder="Enter referral count"
+                                            type="number"
+                                            style={{ 
+                                                '--color': '#111827'
+                                            } as any}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+                                            Referral Earnings
+                                        </label>
+                                        <Input
+                                            value={formData.referralEarnings.toString()}
+                                            onChange={(value) => handleInputChange('referralEarnings', parseInt(value) || 0)}
+                                            placeholder="Enter referral earnings"
+                                            type="number"
+                                            style={{ 
+                                                '--color': '#111827'
+                                            } as any}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+                                            Total Ads Viewed
+                                        </label>
+                                        <Input
+                                            value={(formData.totalAdsViewed || 0).toString()}
+                                            onChange={(value) => handleInputChange('totalAdsViewed', parseInt(value) || 0)}
+                                            placeholder="Enter total ads viewed"
                                             type="number"
                                             style={{ 
                                                 '--color': '#111827'
@@ -221,14 +314,34 @@ export const UserDetailsEditPopup = ({ visible, user, onClose, onSave }: UserDet
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium" style={{ color: '#6B7280' }}>User ID:</span>
-                                        <span className="font-mono text-sm" style={{ color: '#9CA3AF' }}>{formData.id}</span>
+                                        <span className="font-mono text-sm" style={{ color: '#9CA3AF' }}>{formData._id}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="font-medium" style={{ color: '#6B7280' }}>Join Date:</span>
+                                        <span className="font-medium" style={{ color: '#6B7280' }}>Telegram ID:</span>
+                                        <span className="font-mono text-sm" style={{ color: '#9CA3AF' }}>{formData.telegramId}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium" style={{ color: '#6B7280' }}>Referral Code:</span>
+                                        <span className="font-mono text-sm" style={{ color: '#9CA3AF' }}>{formData.referralCode}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium" style={{ color: '#6B7280' }}>Created:</span>
                                         <span style={{ color: '#9CA3AF' }}>
-                                            {new Date(formData.joinDate).toLocaleDateString()}
+                                            {new Date(formData.createdAt).toLocaleDateString()}
                                         </span>
                                     </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium" style={{ color: '#6B7280' }}>Last Updated:</span>
+                                        <span style={{ color: '#9CA3AF' }}>
+                                            {new Date(formData.updatedAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    {formData.ipAddress && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-medium" style={{ color: '#6B7280' }}>IP Address:</span>
+                                            <span className="font-mono text-sm" style={{ color: '#9CA3AF' }}>{formData.ipAddress}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -40,7 +40,6 @@ interface User {
   updatedAt: string;
   // Computed fields from API
   accountAge: number;
-  isActive: boolean;
   averageEarningsPerDay: number;
   // Additional fields
   totalAdsViewed?: number;
@@ -78,19 +77,8 @@ export default function EditUserPage() {
       
       if (status === 200 && response.success && response.data) {
         setUser(response.data);
-        // Populate form with user data
-        form.setFieldsValue({
-          username: response.data.username,
-          firstName: response.data.firstName || '',
-          lastName: response.data.lastName || '',
-          telegramUsername: response.data.telegramUsername || '',
-          balance: response.data.balance,
-          totalEarned: response.data.totalEarned,
-          referralEarnings: response.data.referralEarnings || 0,
-          status: response.data.isActive ? 'active' : 'inactive',
-          banReason: response.data.banReason || '',
-          tasksCompletedToday: response.data.tasksCompletedToday || 0
-        });
+        form.setFieldsValue(response.data);
+       
       } else {
         throw new Error(response.message || 'User not found');
       }
@@ -270,9 +258,8 @@ export default function EditUserPage() {
               >
                 <Select placeholder="Select status">
                   <Option value="active">Active</Option>
-                  <Option value="inactive">Inactive</Option>
-                  <Option value="banned">Banned</Option>
-                  <Option value="suspended">Suspended</Option>
+                  <Option value="ban">Banned</Option>
+                  <Option value="suspend">Suspended</Option>
                 </Select>
               </Form.Item>
 
@@ -368,8 +355,8 @@ export default function EditUserPage() {
               </div>
               <div>
                 <span className="font-medium text-gray-600">Activity Status:</span>
-                <div className={`font-semibold ${user.isActive ? 'text-green-600' : 'text-orange-600'}`}>
-                  {user.isActive ? 'Active' : 'Inactive'}
+                <div className={`font-semibold ${user.status === 'active' ? 'text-green-600' : 'text-orange-600'}`}>
+                  {user.status}
                 </div>
               </div>
               <div>

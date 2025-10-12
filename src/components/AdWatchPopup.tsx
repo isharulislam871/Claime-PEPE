@@ -33,8 +33,8 @@ export default function AdWatchPopup( ) {
   const  watchedToday   = useSelector(selectUserAdsWatchedToday);
   const balance   = useSelector(selectUserBalance);
   const isLoading   = useSelector(selectAuthLoading);
-  
 
+ 
   const onClose = () => {
     dispatch(closePopup('isAdWatchOpen'))
   };
