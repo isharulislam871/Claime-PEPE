@@ -38,16 +38,16 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
   const [loadingState, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [monetagEnabled, setMonetagEnabled] = useState(false);
-  const [gigapubEnabled, setGigapubEnabled] = useState(false);
+  const [enableGigaPubAds, setGigapubEnabled] = useState(false);
   const [formData, setFormData] = useState({
     defaultAdsReward: 100,
     adsRewardMultiplier: 1.0,
     adsWatchLimit: 10,
     minWatchTime: 15,
     gigapubEnabled: false,
-    gigapubPublisherId: '',
+    gigaPubAppId: '',
     monetagEnabled: false,
-    monetagPublisherId: ''
+    monetagZoneId : ''
   });
 
   // Fetch initial values from API
@@ -61,7 +61,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
           if (result.success) {
             setFormData(result.data);
             setMonetagEnabled(result.data?.monetagEnabled || false);
-            setGigapubEnabled(result.data?.gigapubEnabled || false);
+            setGigapubEnabled(result.data?.enableGigaPubAds || false);
           }
         }
       } catch (error) {
@@ -82,7 +82,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
 
   const handleGigaPubToggle = (checked: boolean) => {
     setGigapubEnabled(checked);
-    setFormData(prev => ({ ...prev, gigapubEnabled: checked }));
+    setFormData(prev => ({ ...prev, enableGigaPubAds : checked }));
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -239,7 +239,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={gigapubEnabled}
+                checked={enableGigaPubAds}
                 onChange={(e) => handleGigaPubToggle(e.target.checked)}
                 className="sr-only peer"
               />
@@ -247,7 +247,7 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
             </label>
           </div>
           
-          {gigapubEnabled ? (
+          {enableGigaPubAds ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -257,11 +257,11 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
                   </label>
                   <input
                     type="text"
-                    value={formData.gigapubPublisherId}
-                    onChange={(e) => handleInputChange('gigapubPublisherId', e.target.value)}
+                    value={formData.gigaPubAppId}
+                    onChange={(e) => handleInputChange('gigaPubAppId', e.target.value)}
                     placeholder="Enter GigaPub publisher ID"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required={gigapubEnabled}
+                    required={enableGigaPubAds}
                   />
                   <p className="text-xs text-gray-500 mt-1">Your GigaPub publisher identifier</p>
                 </div>
@@ -304,8 +304,8 @@ export default function AdsSettings({ onSave, loading = false }: AdsSettingsProp
                   </label>
                   <input
                     type="text"
-                    value={formData.monetagPublisherId}
-                    onChange={(e) => handleInputChange('monetagPublisherId', e.target.value)}
+                    value={formData.monetagZoneId}
+                    onChange={(e) => handleInputChange('monetagZoneId', e.target.value)}
                     placeholder="Enter publisher ID"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     required={monetagEnabled}

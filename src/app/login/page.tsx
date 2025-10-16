@@ -138,35 +138,39 @@ const LoginForm = () => {
 
               <div className="space-y-4">
                 <div className="relative">
-                  <UserOutlined className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 z-10 pointer-events-none">
+                    <UserOutlined className="text-lg" />
+                  </div>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="Email address"
-                    className="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all relative z-0"
                     required
                   />
                 </div>
 
                 <div className="relative">
-                  <LockOutlined className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 z-10 pointer-events-none">
+                    <LockOutlined className="text-lg" />
+                  </div>
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder="Password"
-                    className="w-full pl-12 pr-12 py-4 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
+                    className="w-full pl-12 pr-12 py-4 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all relative z-0"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors z-10"
                   >
-                    {showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                    {showPassword ? <EyeInvisibleOutlined className="text-lg" /> : <EyeOutlined className="text-lg" />}
                   </button>
                 </div>
               </div>
@@ -300,9 +304,7 @@ const LoginForm = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-yellow-400 transition-colors z-20"
                     >
-                      {showPassword ? <EyeOutlined className={`text-lg ${showPassword ? 'hidden' : 'block'}`} /> : <EyeInvisibleOutlined className={`text-lg ${showPassword ? 'block' : 'hidden'}`} />}
-
-
+                      {showPassword ? <EyeInvisibleOutlined className="text-lg" /> : <EyeOutlined className="text-lg" />}
                     </button>
                   </div>
                 </div>
