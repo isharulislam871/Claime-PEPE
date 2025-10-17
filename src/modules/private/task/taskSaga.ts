@@ -51,7 +51,7 @@ function* completeTaskSaga(action: { type: string; payload: { taskId: string } }
   );
 
   const { response, status } = (yield call(API_CALL, {
-    url: '/users/tasks',
+    url: '/tasks',
     method: 'POST',
     body: { hash, taskId, signature, timestamp }
   })) as APIResponse;

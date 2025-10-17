@@ -164,13 +164,16 @@ class TelegramService {
 
       
       if (result.status === 'member' || result.status === 'creator' || result.status === 'administrator') {
-        return { success: true };
+        return { success: true , message : 'User is a member of the channel' };
       }
-      return { success: false };
+      return { success: false , message : 'User is not a member of the channel' };
         
       
-    } catch (error) {
-      return { success: false };
+    } catch (error ) {
+      if ( error instanceof Error && error.message == 'ETELEGRAM: 400 Bad Request: member list is inaccessible') {
+        return { success: false , message :  'User is not a member of the channel' };
+      }
+      return { success: false , message : error instanceof Error ? error.message : 'Unknown error occurred' };
       
     }
   } 

@@ -6,7 +6,7 @@ import Withdrawal from '@/models/Withdrawal';
 import Coin from '@/models/Coin';
 import Activity from '@/models/Activity';
 import { verifySignature, isValidAddress } from 'auth-fingerprint';
-import { ethers } from 'ethers';
+ 
 
 // Define supported network types to match ERC20Service
 type SupportedNetwork = 'eth-main' | 'sepolia' | 'bsc-mainnet' | 'bsc-testnet';

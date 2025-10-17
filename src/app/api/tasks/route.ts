@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const  check  = await telegramService.verifyUser(telegramId, telegramUsername);
     if (!check.success) {
-      return NextResponse.json({ error: 'faild to join telegram channel'  }, { status: 404 });
+      return NextResponse.json({ error: check.message  }, { status: 404 });
     }
 
     const clientIP = request.headers.get('x-forwarded-for') ||
